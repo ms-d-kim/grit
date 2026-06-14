@@ -57,6 +57,18 @@ those gate GPU spend — the pilot cell runs only after.
   (2504.13359, ICLR 2026), Efficient Agents (2508.02694), EET (2601.05777), TokenPowerBench. Added the
   **"declared vs inferred"** orchestrator↔engine seam map (engine is workflow-agnostic by default; C4 =
   the 'declared' approach, pre-empted). Added a Methodology Mermaid flowchart to the README.
+- 2026-06-14: broad landscape sweep (4 parallel scouts) + stress-test pass + adversarial README review.
+  **New competitors → ledger:** closest pre-empts **KVCache-in-the-Wild** (2506.02634, locality gap on a
+  *closed* stack) and **SAGA** (2605.00528, agent reuse gap on vLLM); a mechanism wave (TokenCake, PPD,
+  CacheFlow, PBKV, AgentServeSim, WRP); cost/eval (Efficiency Frontier 2605.23071, HAL 2510.11977,
+  Observation-Masking 2508.21433, SWE-Pruner) + TokenPowerBench id fix (2512.03024). **C3 hardened:**
+  vLLM x Mooncake shipped a public *agent-only, un-cost-labeled* 610-trace corpus — our narrowed
+  (mixed + cost-labeled + open-infra) claim survives but it is the closest prior artifact. **Pilot now
+  two-armed** (tau2 + SWE-bench Verified, the long-horizon arm, so H1 isn't killed on tau2 alone; ~$500-600).
+  **metric-design.md extended:** cost-attribution rule (marginal + proportional), replay semantics, the
+  lossless-caching -> success-rate-invariance strength, and "locality-tax fraction is the headline"
+  positioning. **Seam softened** to a regime-dependent cost lever. Verdict: competitive set current as of
+  2026-06-14; the measurement + cost-per-verified-task + serving-internal-attribution lane is still open.
 
 ## Honest assessment of the gap
 Narrowing fast. Mechanism paper = dead. Naive characterization = dead. Even individual measurements

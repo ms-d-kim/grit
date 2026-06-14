@@ -76,6 +76,13 @@ realistic mixed traffic — how much reuse is actually lost when it is absent vs
 **"value of awareness"** is the gap. (The hint interface, C4, is the *declared* approach — now pre-empted
 by Dynamo; see `04-ideas/candidates.md`.)
 
+**Severity caveat (don't overclaim the seam).** RadixAttention already shares prefixes *by content*
+without any signal, and Dynamo hits 85–97% with good routing alone — so the seam bites hardest
+specifically under **bounded cache + multi-tenant interleaving + long horizon** (our scope) and may be
+minor when well-provisioned / single-tenant. We frame it as an **unquantified cost lever in that
+regime**, not a fundamental architecture gap. Risk: if cheap inference (TTL) or "just add cache" recovers
+most of the reuse, the measured value of awareness is small — which is itself a publishable result.
+
 ## Measurement / cost (the angle adjacent to ours)
 
 | Paper | arXiv | Note | Status |
@@ -115,6 +122,41 @@ landscape & motivation; do NOT quote their numbers as research evidence (no-vend
   to success (they list token-economics as future work).
 - **C3 / H4 (no public agentic/mixed trace) STRENGTHENED.** AA-AgentPerf's test set is closed; Dynamo
   releases no traces. The public-trace gap stays open.
+
+## 2026-06-14 landscape refresh (web sweep — new entrants & pre-empt risks)
+
+*All IDs found via live search this pass. Two are the closest pre-empts yet; the rest deepen the
+"mechanism space is crowded" verdict. Re-read SAGA + KVCache-in-the-Wild before drafting.*
+
+**Closest pre-empts (read first):**
+- **KVCache Cache in the Wild** — 2506.02634 (SJTU/Alibaba, USENIX ATC'25) — production-trace
+  characterization of KV reuse incl. *ideal-hit-ratio-vs-cache-size* (≈ realized-vs-available locality)
+  on real single/multi-turn mixed traffic. ✓ **Pre-empts the characterization half** — but closed stack,
+  no agent tool-gap isolation, no cost-per-task. Our wedge = open infra + agent + cost-per-verified-task.
+- **SAGA — Workflow-Atomic Scheduling** — 2605.00528 — program-level scheduling on **vLLM**; Agent
+  Execution Graphs predict cross-tool-call KV reuse to within 1.31× of Bélády. ✓ Near-competitor
+  (open-infra, quantifies the reuse gap on agent traffic) — but agent-only, no mixed traffic, no cost-per-task.
+
+**Mechanism wave (reinforces: mechanism paper = dead):** TokenCake 2510.18586 · RelayCaching 2603.13289 ·
+PrefillShare 2602.12029 · PPD (not-all-prefills-equal) 2603.13358 · CacheFlow 2604.25080 · Halo 2509.02121 ·
+PBKV (predict agent invocation) 2605.06472 · AgentServeSim (simulator) 2606.09613 · Agent.xpu (edge)
+2506.24045 · WRP / vLLM-Semantic-Router vision 2603.21354 (names our chat-vs-agent axis).
+
+**Public agentic trace now EXISTS (C3 watch):** **vLLM × Mooncake** (vLLM blog, May 2026) open-sourced a
+**610-trace Codex/SWE-bench-Pro corpus** (HF; ~33 turns median, ~80–180K ctx, 94%+ reusable prefixes),
+reporting cache hit 1.7%→92.2% via a distributed KV pool. **Agent-only, NOT cost-labeled, NOT mixed** → our
+narrowed claim (mixed chat+agent **+ cost-labeled** open-infra trace) survives, but this is the closest
+prior artifact — cite + differentiate. Dynamo v1.2–1.3 is adding an "Agent Trajectory Interchange Format"
++ agentic trace-replay in-tree — watch.
+
+**Cost/eval + harness confounds (new):** Efficiency Frontier 2605.23071 (amortized-reuse cost) · "Price of
+Progress" 2511.23455 · HAL accuracy-cost Pareto 2510.11977 · Observation-Masking / Complexity Trap
+2508.21433 (masking halves cost — a confound) · SWE-Pruner 2601.16746 · TokenPowerBench **2512.03024**
+(AAAI; J/token — corrects the earlier id-less entry).
+
+**Benchmarks (current set):** SWE-bench Verified · **SWE-bench Pro 2509.16941** · SWE-bench-Live · SWE-EVO
+2512.18470 · AppWorld 2407.18901 · τ²-bench · GAIA · BFCL v4. (Pilot now runs τ² **+ SWE-bench Verified** —
+the long-horizon arm where the gap is visible; see `../05-experiments/pilot/experiments/matrix.yaml`.)
 
 ## Foundations (verified 2026-06-13 per the working brief)
 

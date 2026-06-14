@@ -9,8 +9,10 @@
 - **Generic agent-aware scheduler / eviction mechanism paper** — occupied by Continuum/CacheTTL,
   KVFlow, KVCOMM, Helium, SparseX, TokenDance, Sutradhara; resource mismatch vs funded teams.
   Died 2026-06-10. (Reconfirmed crowded on 2026-06-13.)
-- **"First public agentic serving trace" as headline claim** — eroded by Continuum + others;
-  survives only as C3's narrowed tenancy-mix + cost-labeled form. Died 2026-06-10.
+- **"First public agentic serving trace" as headline claim** — eroded; now concretely pre-empted by the
+  **vLLM × Mooncake** public 610-trace Codex/SWE-bench-Pro corpus (May 2026; agent-only, NOT cost-labeled,
+  NOT mixed). Survives ONLY as C3's narrowed **mixed chat+agent + cost-labeled + open-infra** form.
+  Died 2026-06-10; hardened 2026-06-14.
 - **Generic client-side agent-optimizer tool** — flags already planted by others. Died 2026-06-10.
 - **Persistence controller / stopping calibrator ("grit module")** — transient mechanism;
   post-training internalizes it. Died 2026-06-10.

@@ -92,3 +92,47 @@ strip out model-driven capability differences.)
 - **Depends on #8** (attempt/retry + cost-attribution record) to be implementable.
 - **Open for the sync:** the exact partial-credit rule for long-horizon tasks; the dollar price used for
   the $ view; whether to report energy in V1 or defer to V2.
+
+## Cost attribution under mixed tenancy (the make-or-break — pre-register before any run)
+
+When chat and agent share one GPU, **"the cost of this agent iteration" is not a physical quantity** —
+GPU-seconds are consumed jointly. We must *choose* an attribution rule, and the choice changes the
+number, so it is pre-registered, not decided post-hoc:
+
+- **Marginal (preferred for the headline):** cost of the agent workload = (GPU-seconds with agent + chat)
+  − (GPU-seconds with the same chat alone), via paired A/B runs. Answers "what did adding the agent
+  cost?" — the economically meaningful question, and it naturally absorbs interleaving overhead.
+- **Proportional (reported alongside):** split joint GPU-seconds by per-request token-share (or
+  active-time share). Cheaper to compute, but arbitrary under heavy interleaving.
+- Report **both**; if they disagree materially, that disagreement *is* a finding about interleaving cost.
+- This requires the **attempt/retry + accounting-window records** of open-issue #8; without them the
+  numerator is undefined.
+
+## "Available reuse" replay — pre-register the semantics
+
+The infinite-cache replay that defines *available reuse* has free parameters that can swing the gap.
+Fix them up front: (a) reuse unit = **exact prefix-block match** on token IDs (not semantic); (b) scope =
+**the agent's own request lineage** for the headline number, with a **global-stream** variant reported
+separately (cross-request sharing is a different quantity); (c) tokenizer + block size pinned. State
+these in the paper's methods; the number is meaningless without them.
+
+## A genuine strength: lossless caching ⇒ success-rate invariance
+
+Exact prefix caching does **not change the model's output tokens** — so **task success rate is invariant
+across the cache-policy and tenancy axes by construction.** Therefore, *for those axes*, the denominator
+(verified tasks) is held fixed for free and cost-per-verified-task **cleanly isolates serving cost** —
+the model-vs-system confound (open-issue #1 / threats #1) is much smaller than feared. The confound bites
+only along the **horizon** axis (more iterations → more successes → moving denominator), which we handle
+separately (report the success/censoring curve there). Lean on this in the methods section.
+
+## Positioning (so reviewers don't dismiss it as relabeled cost-of-pass)
+
+The 2026-06-14 sweep confirms two things: **(1)** cost-per-verified-task (= Cost-of-Pass) is *becoming the
+standard unit* (Cost-of-Pass 2504.13359; Efficient Agents 2508.02694; HAL's accuracy–cost Pareto
+2510.11977; "Price of Progress" 2511.23455) — so the *metric* is not our novelty; **(2)** essentially
+**no one ties cost-per-task to serving-internal cache behavior** — the economics papers treat token price
+as an exogenous API rate; the systems papers (Continuum/CacheTTL, PBKV, KVFlow, Dynamo hints) optimize
+KV reuse but report latency/JCT/memory, never cost-per-verified-task. **Our contribution is the bridge.**
+Therefore the **headline number is the locality-tax fraction** — *what share of cost-per-verified-task is
+attributable to eviction / the realized-vs-available gap* — not the cost curve itself. Cite Cost-of-Pass
+as the anchor; do not imply the metric is new.

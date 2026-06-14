@@ -33,7 +33,9 @@ kill criterion; killed ideas move to `graveyard.md`. Check the graveyard before 
   cost labels, OTel-format cross-layer spans + the collection harness.
 - **Collisions:** trace-alone eroded (Continuum 2511.02230 ✓; "lmcache-agent-trace" ⚠ unverified).
   **Tenancy-mix + cost labels on open infra is the surviving differentiation.** Note ServeGen
-  (2505.09999 ✓) released a generator on real but non-agentic data.
+  (2505.09999 ✓) released a generator on real but non-agentic data. **(2026-06-14) vLLM × Mooncake
+  released a public 610-trace Codex/SWE-bench-Pro corpus — agent-only, NOT cost-labeled, NOT mixed;
+  it is now the closest prior artifact. Differentiation narrows to: mixed chat+agent + cost labels + open infra.**
 - **Status:** bundled into C1's instrumentation by design. De-risked home: NeurIPS D&B.
 
 ## C4 — Runtime↔engine hint interface (value-of-hints study → spec)

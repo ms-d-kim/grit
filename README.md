@@ -47,16 +47,19 @@ gap**); (2) how much of that drop is caused by **interleaving** vs. the agent's 
 (3) what the gap costs **per verified task the agent completes** (the *Cost of Grit*). The adjacent work
 each misses a piece: **AA-AgentPerf** measures agents-per-megawatt on a *closed* set (capacity, not
 cost-per-success); **Don't Break the Cache** measures at the provider-API black box (not open-infra
-internals); **GoodServe** *optimizes* goodput but doesn't tie it to cost or release a trace. The empty
-intersection — open infra + mixed traffic + interleaving isolated + cost tied to verified work, shipped
-as a public trace — is ours.
+internals); **GoodServe** *optimizes* goodput but doesn't tie it to cost or release a trace. The closest 2026 work
+tightens the screws further — **KVCache-in-the-Wild** (ATC'25) measures the locality gap but on a
+*closed* stack with no agent/cost angle; **SAGA** quantifies the agent reuse gap on vLLM but agent-only,
+no cost; **vLLM × Mooncake** released a public but *agent-only, un-cost-labeled* 610-trace corpus. The
+empty intersection — open infra + mixed traffic + interleaving isolated + cost tied to verified work,
+shipped as a public trace — is still ours.
 
 ## Contributions
 
 | | Contribution | Status |
 |---|---|---|
 | **C1** — *lead* | The realized-vs-available **cache-locality gap** quantified on open infra, expressed as the **"Cost of Grit"** (cost per *verified task* — [`docs/metric-design.md`](docs/metric-design.md)) | pilot pending |
-| **C3** — *artifact* | A released **mixed chat×agent, cost-labeled, OpenTelemetry-format serving trace + collection harness** — no public *mixed, cost-labeled, open-infra* agentic trace exists | bundled with C1 |
+| **C3** — *artifact* | A released **mixed chat×agent, cost-labeled, OpenTelemetry-format serving trace + collection harness** — no public *mixed, cost-labeled, open-infra* agentic trace exists (closest prior: vLLM×Mooncake's agent-only, un-cost-labeled corpus) | bundled with C1 |
 
 **C1, technically.** Hold the model fixed (Qwen2.5-Coder-32B — the model-vs-system confound control) and
 vary the *serving* knobs: **horizon** (max agent iterations) × **cache policy** {none, LRU,
@@ -106,12 +109,14 @@ Each is falsifiable with a stated kill criterion (full design in
 ## The pilot — first, cheap, kill-fast
 
 ```
-ReAct × τ²-bench × {isolated, mixed} × {LRU, retain-during-tool} × 50 scenarios × 3 repeats
-= 600 trajectories on one vLLM config  (~1 week, <$300)
+ReAct × {τ²-bench, SWE-bench Verified} × {isolated, mixed} × {LRU, retain-during-tool} × 50 × 3
+≈ 1,200 trajectories on one vLLM config  (~1–2 weeks, ~$500–600)
 ```
 
-Readouts: available vs realized hit rate (**the gap**), the Cost of Grit (cost per verified task),
-tool-gap distribution. The metric contract and the open design issues to settle before spending GPU budget are
+τ²-bench is the cheap **tool-gap (H3) probe**; **SWE-bench Verified is the long-horizon arm where the
+locality tax should actually be visible** — a τ²-only pilot risks a *false-negative* kill of H1 (its
+trajectories are short enough to fit a bounded cache). Readouts: available vs realized hit rate
+(**the gap**), the Cost of Grit (cost per verified task), tool-gap distribution. The metric contract and the open design issues to settle before spending GPU budget are
 in [`05-experiments/pilot/README.md`](05-experiments/pilot/README.md).
 
 ---
@@ -185,6 +190,15 @@ flowchart TD
   classDef good     fill:#E3F1E1,stroke:#2F7D32,stroke-width:2px,color:#13351A;
   classDef bad      fill:#F8E2E2,stroke:#A83232,stroke-width:2px,color:#4A1414;
 ```
+
+**Reading the diagram.** Colour encodes *role* — blue = inputs, gray = workload build, green = online
+serving (on the GPU), amber = the recorded trace, purple = offline measurement, navy = the two headline
+results, orange = the decision gate, green/red = outcomes. The flow, in one breath: the two **inputs**
+(an agent benchmark + a chat trace) are combined into a **workload** (run *isolated* or *mixed*); the
+**agent loop** executes on the **serving engine** under a cache policy; every model/tool call is recorded
+in one **trace**; offline we derive the two quantities that matter — the **locality gap** (compare an
+infinite-cache *replay* against the engine's *realized* hit counters) and the **Cost of Grit** (total
+cost over all attempts ÷ verified tasks) — and a **kill gate** decides scale-up vs. reframe.
 
 > Note: the harness is a scaffold and the metric/trace contract is under redesign (nine open design
 > issues gate GPU spend) — the diagram is the *intended* pipeline, not a finished system.

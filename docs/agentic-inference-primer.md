@@ -28,7 +28,11 @@ bibliography, per the project's standing no-hallucinated-citations rule.*
 - the GPU **idles** during tool calls (tool-call gaps),
 - the prefill/decode balance **flips** toward decode-dominated, and KV state becomes **long-lived** rather than disposable.
 
-**6. The orchestrator/engine seam.** The orchestrator (LangGraph, CrewAI, OpenAI Agents SDK) and the serving engine (vLLM, SGLang) are decoupled black boxes. Neither sees the other's state — the engine is **workflow-agnostic** (Cortex's word), blind to the agent loop, the coming tool pause, and cross-request prefix sharing — so globally optimal cache/scheduling is impossible. "Break the abstraction barrier" is the recurring 2026 theme, and the frontier splits into **declaring** the contract (hints/plans/DAGs: Dynamo `agent_hints`, KVFlow, Helium, HexAGenT, Cortex, Autellix, Sutradhara) vs **inferring** it engine-side (Continuum/CacheTTL TTL heuristic, GoodServe prompt-inference). Nobody has standardized it or measured the *value of awareness* on open infra — that's our wedge. (See the "declared vs inferred" note in `../02-literature/sota-verified-2026.md`.)
+**6. The orchestrator/engine seam.** The orchestrator (LangGraph, CrewAI, OpenAI Agents SDK) and the serving engine (vLLM, SGLang) are decoupled black boxes. Neither sees the other's state — the engine is **workflow-agnostic** (Cortex's word), blind to the agent loop, the coming tool pause, and cross-request prefix sharing — so globally optimal cache/scheduling is impossible. "Break the abstraction barrier" is the recurring 2026 theme, and the frontier splits into **declaring** the contract (hints/plans/DAGs: Dynamo `agent_hints`, KVFlow, Helium, HexAGenT, Cortex, Autellix, Sutradhara) vs **inferring** it engine-side (Continuum/CacheTTL TTL heuristic, GoodServe prompt-inference). Nobody has standardized it or measured the *value of awareness* on open infra — that's our wedge.
+*Severity is regime-dependent*, though: RadixAttention already shares prefixes by content and good
+routing alone hits 85–97%, so the seam bites mainly under bounded cache + interleaving + long horizon —
+treat it as an unquantified cost lever in that regime, not a fundamental gap. (See the "declared vs
+inferred" note in `../02-literature/sota-verified-2026.md`.)
 
 **7. Two competing paradigms in the ecosystem.**
 - **Externalize** — keep the model frozen, optimize the scaffold/prompt/skill document (SkillOpt, ALIGN).

@@ -40,14 +40,19 @@ scenarios_per_cell: 50            # ~50 task instances
 # ---------------------------------------------------------------------------
 pilot:
   engine: vllm
-  benchmark: tau2_bench
+  # TWO benchmark arms (added 2026-06-14): tau2-bench is the cheap tool-gap probe (H3); SWE-bench
+  # Verified is the long-horizon / large-context arm where the locality tax should actually be VISIBLE.
+  # WHY both: tau2 trajectories are short — on a bounded cache they may simply fit, so a tau2-only
+  # pilot risks a FALSE-NEGATIVE kill of H1. The headline locality-gap result lives in the SWE arm;
+  # tau2 de-risks the tool-gap mechanics cheaply. Run SWE at reduced scenarios first if budget binds.
+  benchmark: [tau2_bench, swebench_verified]
   methodology: react
   cache_policy: [lru, retain_during_tool]
   tenancy: [isolated, mixed_0.50]
   horizon_max_iters: [16]
   scenarios: 50
   repeats: 3
-  # = 2 cache x 2 tenancy x 50 x 3 = 600 trajectories on one config.
+  # = 2 benchmark x 2 cache x 2 tenancy x 50 x 3 = 1200 trajectories (~1-2 weeks; ~$500-600 rented H100).
   # Primary readouts: available vs realized prefix-cache hit rate (the gap),
   # cost-per-verified-iteration, tool-gap distribution.
   # KILL-FAST: if isolated realized hit rate already collapses (no headroom for the
@@ -56,6 +61,6 @@ pilot:
 
 compute:
   target: "1xH100 (80GB) minimum; 2xH100/H200 preferred"
-  rent: "Runpod / Lambda / Vast (~$2-4/hr); pilot likely <$300"
+  rent: "Runpod / Lambda / Vast (~$2-4/hr); two-arm pilot ~$500-600 (was <$300 for tau2-only)"
   full_study_estimate_usd: "500-1500 (open-infra GPU rental only; no proprietary APIs, per scope)"
   funding: "TBD — Stanford credits / NVIDIA credits / personal (decide at sync)"

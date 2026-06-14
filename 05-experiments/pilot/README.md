@@ -1,4 +1,4 @@
-# Pilot Design — Agentic-Serving Characterization
+# Pilot Design — GRIT (agentic-serving characterization)
 
 *Purpose: the document to screen-share at the Vinita sync. It maps to the agreed agenda —
 pilot design, instrumentation/analysis ownership, and (implicitly) what work belongs to

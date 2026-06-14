@@ -1,4 +1,4 @@
-# STATUS — Agentic-Serving Characterization Paper
+# STATUS — GRIT (agentic-serving characterization)
 
 *Last reconciled: 2026-06-13. This is the single place to read "where are we." If it conflicts with
 the old planning doc, this wins — that doc is a fossil record of earlier drift.*

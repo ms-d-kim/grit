@@ -5,59 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Figure 1 — The agentic-serving ecosystem and the unoccupied measurement niche</title>
 <style>
-  :root{
-    --bg:#f7f6f3; --surface:#ffffff; --panel:#fbfaf7; --text:#1b1b18; --text2:#5f5f58; --text3:#94948c;
-    --border:rgba(0,0,0,.18); --hair:rgba(0,0,0,.10); --serif:Georgia,"Times New Roman","Latin Modern Roman",serif;
-    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-  }
-  @media (prefers-color-scheme:dark){
-    :root{ --bg:#1a1a18; --surface:#242422; --panel:#201f1d; --text:#ececea; --text2:#a6a69f; --text3:#71716a;
-      --border:rgba(255,255,255,.22); --hair:rgba(255,255,255,.12); }
-  }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{margin:0;background:#fff;color:#111;font-family:Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
   .wrap{height:100%;display:flex;flex-direction:column}
-  header{display:flex;align-items:center;gap:10px;padding:12px 18px 6px;flex-wrap:wrap}
-  h1{font-family:var(--serif);font-size:15px;font-weight:400;font-style:italic;margin:0 14px 0 0;color:var(--text2)}
+  header{display:flex;align-items:center;gap:8px;padding:12px 18px 6px;flex-wrap:wrap}
+  .ftitle{font-family:"Times New Roman",Times,serif;font-style:italic;font-size:15px;color:#333;margin-right:10px}
   #chips{display:flex;gap:5px;flex-wrap:wrap}
-  .chip{font-family:var(--sans);font-size:11px;padding:3px 9px;border-radius:3px;border:1px solid var(--cc);color:var(--text);background:transparent;cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s}
-  .chip .cd{width:9px;height:9px;border-radius:2px;background:var(--cc)}
-  .chip.off{opacity:.34}
+  .chip{font-family:Helvetica,Arial,sans-serif;font-size:11px;padding:3px 9px;border:1px solid #bbb;background:#fff;color:#333;cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:5px;border-radius:2px}
+  .chip .cd{width:9px;height:9px;background:#888;border:1px solid #555}
+  .chip.off{color:#bbb;border-color:#e2e2e2}
+  .chip.off .cd{background:#e8e8e8;border-color:#ddd}
   .tools{margin-left:auto;display:flex;gap:5px}
-  .tb{width:32px;height:32px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-  .tb:active{transform:scale(.94)}
-  #vp{position:relative;flex:1;min-height:420px;overflow:hidden;cursor:grab;touch-action:none;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);background:var(--bg)}
+  .tb{width:30px;height:30px;border:1px solid #111;background:#fff;color:#111;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:2px}
+  .tb:active{background:#f0f0f0}
+  #vp{position:relative;flex:1;min-height:430px;overflow:hidden;cursor:grab;touch-action:none;border-top:1px solid #ddd;border-bottom:1px solid #ddd;background:#fff}
   #vp.grab{cursor:grabbing}
   #world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
   #edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-  .hdr{font-family:var(--serif);font-size:12.5px;font-style:italic;fill:var(--text3)}
-  .elbl{font-family:var(--serif);font-style:italic;font-size:12px;fill:var(--text2);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
-  .seamlbl{fill:#c0562a}
+  .blab{font-family:Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:.08em;fill:#9a9a9a}
+  .elbl{font-family:Helvetica,Arial,sans-serif;font-size:11.5px;fill:#444;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+  .elbl.red{fill:#9b2226}.elbl.blue{fill:#2c5f8a}
   .np{position:absolute;transform:translate(-50%,-50%);z-index:2}
-  .node{width:178px;background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--nc);border-radius:4px;padding:7px 10px 8px;cursor:pointer;transition:transform .2s cubic-bezier(.22,1,.36,1),background .15s,opacity .2s}
-  .node:hover{transform:scale(1.035);background:var(--panel)}
-  .node .tag{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--nc);font-weight:500}
-  .node .ttl{font-size:13px;font-weight:500;margin:1px 0 2px;line-height:1.2}
-  .node .sub{font-size:11px;color:var(--text2);line-height:1.32}
-  .node.big{width:206px;border-width:1px;border-top-width:4px;box-shadow:0 0 0 1px var(--nc) inset}
-  .node.sel{box-shadow:0 0 0 2px var(--nc)}
-  .dim{opacity:.16 !important}
-  #tip{position:absolute;left:0;top:0;max-width:250px;padding:9px 12px;border-radius:4px;background:var(--surface);border:1px solid var(--border);box-shadow:0 6px 22px rgba(0,0,0,.16);opacity:0;transform:translateY(4px);transition:opacity .15s,transform .18s;pointer-events:none;z-index:20;font-size:12.5px;line-height:1.5}
-  #tip .tt{font-weight:500;display:block;margin-bottom:2px}
-  #tip .td{color:var(--text2)}
-  figcaption{padding:9px 18px 6px;font-family:var(--serif);font-size:12.5px;line-height:1.5;color:var(--text2)}
-  figcaption b{font-style:normal;font-weight:400;color:var(--text)}
-  .key{padding:0 18px 12px;display:flex;flex-wrap:wrap;gap:14px;font-family:var(--serif);font-size:11.5px;color:var(--text2);align-items:center}
+  .node{width:178px;background:#fff;border:1px solid #111;border-radius:2px;padding:6px 9px 7px;cursor:pointer;transition:transform .15s ease,background .12s,opacity .18s}
+  .node:hover{transform:scale(1.025);background:#f7f7f7}
+  .node .ttl{font:500 13px/1.18 Helvetica,Arial,sans-serif;color:#111;margin-bottom:2px}
+  .node .sub{font:400 11px/1.3 Helvetica,Arial,sans-serif;color:#5a5a5a}
+  .node.big{width:202px;border:1.5px solid #2c5f8a;background:#eef4fb}
+  .node.big .ttl{color:#1d4e79}
+  .node.sel{outline:2px solid #2c5f8a;outline-offset:1px}
+  .dim{opacity:.12 !important}
+  #tip{position:absolute;left:0;top:0;max-width:250px;padding:8px 11px;background:#fff;border:1px solid #111;border-radius:2px;opacity:0;transform:translateY(3px);transition:opacity .14s,transform .16s;pointer-events:none;z-index:20;font:400 12px/1.5 Helvetica,Arial,sans-serif}
+  #tip .tt{font-weight:500;display:block;margin-bottom:2px;color:#111}
+  #tip .td{color:#555}
+  figcaption{padding:9px 18px 6px;font-family:"Times New Roman",Times,serif;font-size:13px;line-height:1.5;color:#333}
+  figcaption b{font-weight:700;color:#111}
+  .key{padding:0 18px 12px;display:flex;flex-wrap:wrap;gap:14px;font-family:"Times New Roman",Times,serif;font-size:12px;color:#444;align-items:center}
   .key .k{display:inline-flex;align-items:center;gap:6px}
-  .key .ks{width:16px;height:0;border-top-width:2px;border-top-style:solid;display:inline-block}
+  .key .ks{width:20px;height:0;display:inline-block}
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
 </head>
 <body>
 <figure class="wrap" style="margin:0">
 <header>
-  <h1>Figure 1 &mdash; the agentic-serving ecosystem</h1>
+  <span class="ftitle">Figure 1 &mdash; the agentic-serving ecosystem</span>
   <div id="chips"></div>
   <div class="tools">
     <button class="tb" id="zin" aria-label="Zoom in">+</button>
@@ -65,48 +57,50 @@
     <button class="tb" id="zfit" aria-label="Reset view">&#10530;</button>
   </div>
 </header>
-<p class="sr">Tiered dataflow diagram of the agentic LLM serving ecosystem. Left to right: personas and their pains; chat and agent clients with orchestrators; open serving engines (vLLM, SGLang) with KV infrastructure and crowded agent-aware mechanisms; the orchestrator-to-engine seam where realized cache reuse falls below available reuse; vendor hardware (NVIDIA Dynamo); a measurement band (Cost-of-Pass, AA-AgentPerf, InferenceX, task benchmarks); and this work — an open cost-per-verified-task meter — with its three contributions. Drag to pan, scroll to zoom, hover for detail, click a node to focus its relationships.</p>
-<div id="vp"><div id="world"><svg id="edges" width="1200" height="800"></svg></div><div id="tip" role="status"></div></div>
-<figcaption><b>Figure 1.</b> The agentic-serving ecosystem as a left-to-right dataflow. Agent and chat clients submit through workflow-agnostic orchestrators to open serving engines; at the <span style="color:#c0562a">orchestrator&#8596;engine seam</span> the engine is blind to the agent loop, so under mixed-traffic interleaving an agent's <i>realized</i> KV-cache reuse falls below its <i>available</i> reuse. A crowded field of mechanisms and vendor hints attacks this; benchmarks measure capability or energy but not cost-per-completed-task tied to cache behavior on open infra. <b>This work</b> instruments that gap (locality gap = available &minus; realized) and ships the meter and the missing public trace.</figcaption>
+<p class="sr">Tiered dataflow diagram of the agentic LLM serving ecosystem, in the style of a systems-paper figure: titled group boxes for personas/pains, clients and orchestration, open serving engines, vendor hardware, a measurement band, and this work with its contributions. The orchestrator-to-engine seam, where realized cache reuse falls below available reuse under mixed-traffic interleaving, is drawn in red; this work and its outputs are drawn in blue. Drag to pan, scroll to zoom, hover for detail, click a node to focus.</p>
+<div id="vp"><div id="world"><svg id="edges" width="1200" height="800">
+<defs>
+<marker id="ad" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6.5,3 L0,6 z" fill="#444"/></marker>
+<marker id="ag" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6.5,3 L0,6 z" fill="#888"/></marker>
+<marker id="ar" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6.5,3 L0,6 z" fill="#9b2226"/></marker>
+<marker id="ab" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6.5,3 L0,6 z" fill="#2c5f8a"/></marker>
+</defs>
+</svg></div><div id="tip" role="status"></div></div>
+<figcaption><b>Figure 1.</b> The agentic-serving ecosystem as a left-to-right dataflow. Agent and chat clients submit through workflow-agnostic orchestrators to open serving engines; at the <span style="color:#9b2226">orchestrator&#8596;engine seam</span> (red) the engine is blind to the agent loop, so under mixed-traffic interleaving an agent's <i>realized</i> KV-cache reuse falls below its <i>available</i> reuse. A crowded field of mechanisms and vendor hints attacks this; existing benchmarks measure capability or energy, not cost-per-completed-task tied to cache behavior on open infrastructure. <span style="color:#2c5f8a"><b>This work</b></span> (blue) instruments that gap &mdash; locality gap = available &minus; realized &mdash; and ships the meter and the missing public trace.</figcaption>
 <div class="key" id="key"></div>
 </figure>
 <script>
 (function(){
-  var cats={
-    persona:{c:'#9a4b52',l:'Persona / pain',tag:'PERSONA'},
-    chat:{c:'#8a6d3b',l:'Co-tenant traffic',tag:'CO-TENANT'},
-    app:{c:'#3f5b86',l:'Agent app',tag:'AGENT APP'},
-    orch:{c:'#5a6aa8',l:'Orchestration',tag:'ORCHESTRATION'},
-    infra:{c:'#3f8f7c',l:'KV infra',tag:'KV INFRA'},
-    engine:{c:'#2f7d6a',l:'Serving engine',tag:'SERVING ENGINE'},
-    mech:{c:'#9c7a2e',l:'Mechanism (crowded)',tag:'MECHANISM'},
-    vendor:{c:'#6b5d4f',l:'Vendor / hardware',tag:'VENDOR'},
-    meas:{c:'#6a5a92',l:'Measurement',tag:'BENCHMARK'},
-    oppty:{c:'#2b5a86',l:'Contribution',tag:'CONTRIBUTION'},
-    project:{c:'#1f3a5f',l:'This work',tag:'THIS WORK'}
-  };
+  var bands=[
+    {k:'personas',x0:-25,x1:170,l:'PERSONAS · PAINS'},
+    {k:'clients',x0:180,x1:402,l:'CLIENTS · AGENTS · ORCHESTRATION'},
+    {k:'engines',x0:412,x1:702,l:'OPEN SERVING ENGINES'},
+    {k:'vendor',x0:712,x1:962,l:'VENDOR · HARDWARE'},
+    {k:'contributions',x0:968,x1:1182,l:'THIS WORK · CONTRIBUTIONS'}
+  ];
+  var b2={persona:'personas',chat:'clients',app:'clients',orch:'clients',infra:'engines',engine:'engines',mech:'engines',vendor:'vendor',meas:'measurement',oppty:'contributions',project:'contributions'};
   var N=[
-    {id:'U1',cat:'persona',x:70,y:130,t:'Platform / serving eng',s:'pain: can’t explain agents ≈5× chat',det:'Owns the GPUs; cache misses spike when chat and agents share an engine. Needs to attribute cost.'},
+    {id:'U1',cat:'persona',x:70,y:135,t:'Platform / serving eng',s:'pain: can’t explain agents ≈5× chat',det:'Owns the GPUs; cache misses spike when chat and agents share an engine. Needs to attribute cost.'},
     {id:'U2',cat:'persona',x:70,y:280,t:'Agent product builder',s:'pain: $/token hides $/task',det:'Ships an agent product; long-horizon loops blow the budget while per-token price looks fine.'},
-    {id:'U3',cat:'persona',x:70,y:450,t:'ML-systems researcher',s:'pain: no public agentic+cost trace',det:'Can’t compare engines/configs fairly without a shared mixed, cost-labeled workload.'},
-    {id:'U4',cat:'persona',x:70,y:600,t:'Eng leadership / FinOps',s:'pain: unpredictable bills',det:'Needs a cost-per-successful-task meter to forecast and govern agent spend.'},
-    {id:'CT',cat:'chat',x:300,y:80,t:'Chat / RAG traffic',s:'the co-tenant in mixed serving',det:'Short, bursty requests sharing the engine; their arrivals evict agent KV — the interleaving driver (H1).'},
-    {id:'A1',cat:'app',x:300,y:215,t:'Coding agents',s:'Cursor · Claude Code · Codex · OpenHands',det:'Long tool-loops; context grows monotonically — the canonical high-reuse agent workload.'},
-    {id:'A2',cat:'app',x:300,y:345,t:'Web / computer-use agents',s:'browser & GUI control loops',det:'Multi-step perception-action loops; similar reuse profile, different tool latencies.'},
-    {id:'O',cat:'orch',x:300,y:480,t:'Orchestrators',s:'LangGraph · CrewAI · Agents SDK',det:'Drive the ReAct loop. Workflow-agnostic to the engine — the contract that is missing is here.'},
-    {id:'KV',cat:'infra',x:590,y:110,t:'KV infra',s:'Mooncake · LMCache · llm-d',det:'Distributed KV pools / offload that extend the cache beyond one GPU’s HBM.'},
-    {id:'E1',cat:'engine',x:590,y:270,t:'vLLM',s:'PagedAttention + prefix caching',det:'Open engine #1. Exposes prefix_cache_hits/queries + per-request num_cached_tokens — our realized-reuse source.'},
-    {id:'E2',cat:'engine',x:590,y:410,t:'SGLang',s:'RadixAttention reuse (ceiling)',det:'Open engine #2. Content-based prefix sharing — the best-case reuse ceiling to measure against.'},
-    {id:'M',cat:'mech',x:590,y:575,t:'Agent-aware mechanisms',s:'KVFlow · Continuum · SAGA · ThunderAgent · Helium · Cortex · HexAGenT',det:'The crowded fix: everyone is building agent-aware caching/scheduling. That is why we measure rather than add one.'},
-    {id:'V1',cat:'vendor',x:860,y:300,t:'NVIDIA Dynamo',s:'KV-aware router + agent hints',det:'The declared contract, shipping: nvext.agent_hints + cache_control TTL. Pre-empts “propose a hint spec”.'},
-    {id:'B3',cat:'meas',x:250,y:700,t:'SWE-bench V · τ²-bench · HAL',s:'our task benchmarks; HAL cost-aware',det:'Define “verified task”. SWE-bench Verified + τ²-bench are the two pilot arms.'},
-    {id:'C0',cat:'meas',x:470,y:700,t:'Cost-of-Pass (anchor)',s:'$ per correct solution',det:'The academic anchor: expected cost per correct answer. We open it up to serving-internal cache behavior.'},
-    {id:'B1',cat:'meas',x:690,y:700,t:'AA-AgentPerf',s:'agents/MW under SLO; closed set',det:'Industry agent-efficiency benchmark — agents-per-megawatt, closed test set, no cost-per-task.'},
-    {id:'B2',cat:'meas',x:900,y:700,t:'InferenceX',s:'$/token, throughput; not agentic',det:'General serving benchmark; cost-per-token and throughput, not tied to agent task success.'},
-    {id:'Z1',cat:'oppty',x:1075,y:150,t:'Cost-of-Grit meter (C1)',s:'the locality-tax curve',det:'Lead contribution: cost per completed task vs horizon × cache policy × tenancy — the missing meter.'},
-    {id:'Z2',cat:'oppty',x:1075,y:310,t:'Public mixed trace (C3)',s:'cost-labeled · open-infra · none exists',det:'Artifact contribution: a mixed chat+agent, cost-labeled, OTel-format serving trace + harness.'},
-    {id:'P',cat:'project',x:1040,y:470,t:'This work — the open meter',s:'cost-per-verified-task · gap = available − realized',det:'Holds the model fixed; varies serving knobs on open infra; measures the value lost at the seam.',big:1},
-    {id:'Z3',cat:'oppty',x:1075,y:630,t:'Value-of-hints (C4)',s:'declared vs inferred — measured',det:'Re-scoped contribution: measure the marginal value of existing hints (Dynamo pre-empts proposing a new spec).'}
+    {id:'U3',cat:'persona',x:70,y:445,t:'ML-systems researcher',s:'pain: no public agentic+cost trace',det:'Can’t compare engines/configs fairly without a shared mixed, cost-labeled workload.'},
+    {id:'U4',cat:'persona',x:70,y:590,t:'Eng leadership / FinOps',s:'pain: unpredictable bills',det:'Needs a cost-per-successful-task meter to forecast and govern agent spend.'},
+    {id:'CT',cat:'chat',x:300,y:120,t:'Chat / RAG traffic',s:'the co-tenant in mixed serving',det:'Short, bursty requests sharing the engine; their arrivals evict agent KV — the interleaving driver (H1).'},
+    {id:'A1',cat:'app',x:300,y:250,t:'Coding agents',s:'Cursor · Claude Code · Codex · OpenHands',det:'Long tool-loops; context grows monotonically — the canonical high-reuse agent workload.'},
+    {id:'A2',cat:'app',x:300,y:375,t:'Web / computer-use agents',s:'browser & GUI control loops',det:'Multi-step perception-action loops; similar reuse profile, different tool latencies.'},
+    {id:'O',cat:'orch',x:300,y:500,t:'Orchestrators',s:'LangGraph · CrewAI · Agents SDK',det:'Drive the ReAct loop. Workflow-agnostic to the engine — the missing contract lives here.'},
+    {id:'KV',cat:'infra',x:585,y:135,t:'KV infra',s:'Mooncake · LMCache · llm-d',det:'Distributed KV pools / offload that extend the cache beyond one GPU’s HBM.'},
+    {id:'E1',cat:'engine',x:585,y:285,t:'vLLM',s:'PagedAttention + prefix caching',det:'Open engine #1. Exposes prefix_cache_hits/queries + per-request num_cached_tokens — our realized-reuse source.'},
+    {id:'E2',cat:'engine',x:585,y:415,t:'SGLang',s:'RadixAttention reuse (ceiling)',det:'Open engine #2. Content-based prefix sharing — the best-case reuse ceiling to measure against.'},
+    {id:'M',cat:'mech',x:585,y:560,t:'Agent-aware mechanisms',s:'KVFlow · Continuum · SAGA · ThunderAgent · Helium · Cortex · HexAGenT',det:'The crowded fix: everyone is building agent-aware caching/scheduling. That is why we measure rather than add one.'},
+    {id:'V1',cat:'vendor',x:837,y:330,t:'NVIDIA Dynamo',s:'KV-aware router + agent hints',det:'The declared contract, shipping: nvext.agent_hints + cache_control TTL. Pre-empts “propose a hint spec”.'},
+    {id:'B3',cat:'meas',x:255,y:715,t:'SWE-bench V · τ²-bench · HAL',s:'our task benchmarks; HAL cost-aware',det:'Define “verified task”. SWE-bench Verified + τ²-bench are the two pilot arms.'},
+    {id:'C0',cat:'meas',x:470,y:715,t:'Cost-of-Pass (anchor)',s:'$ per correct solution',det:'The academic anchor: expected cost per correct answer. We open it to serving-internal cache behavior.'},
+    {id:'B1',cat:'meas',x:680,y:715,t:'AA-AgentPerf',s:'agents/MW under SLO; closed set',det:'Industry agent-efficiency benchmark — agents-per-megawatt, closed test set, no cost-per-task.'},
+    {id:'B2',cat:'meas',x:885,y:715,t:'InferenceX',s:'$/token, throughput; not agentic',det:'General serving benchmark; cost-per-token and throughput, not tied to agent task success.'},
+    {id:'Z1',cat:'oppty',x:1075,y:165,t:'Cost-of-Grit meter (C1)',s:'the locality-tax curve',det:'Lead contribution: cost per completed task vs horizon × cache policy × tenancy — the missing meter.'},
+    {id:'Z2',cat:'oppty',x:1075,y:315,t:'Public mixed trace (C3)',s:'cost-labeled · open-infra · none exists',det:'Artifact contribution: a mixed chat+agent, cost-labeled, OTel-format serving trace + harness.'},
+    {id:'P',cat:'project',x:1068,y:465,t:'This work — the open meter',s:'cost-per-verified-task · gap = available − realized',det:'Holds the model fixed; varies serving knobs on open infra; measures the value lost at the seam.',big:1},
+    {id:'Z3',cat:'oppty',x:1075,y:610,t:'Value-of-hints (C4)',s:'declared vs inferred — measured',det:'Re-scoped contribution: measure the marginal value of existing hints (Dynamo pre-empts proposing a new spec).'}
   ];
   var E=[
     ['CT','E1','interleave','interleaves → evicts agent KV'],['CT','E2','interleave'],
@@ -123,58 +117,71 @@
     ['Z3','V1','preempt','pre-empted by Dynamo']
   ];
   var ek={
-    flow:{c:'#9aa3af',w:1.4,d:'',l:'request / data flow'},
-    seam:{c:'#c0562a',w:2.6,d:'',l:'orchestrator↔engine seam'},
-    interleave:{c:'#c0562a',w:1.8,d:'6 4',l:'mixed-traffic interleaving'},
-    meas:{c:'#6a5a92',w:1.4,d:'2 5',l:'measures'},
-    pain:{c:'#9a4b52',w:1.3,d:'2 5',l:'persona pain'},
-    project:{c:'#1f3a5f',w:1.9,d:'',l:'this work instruments'},
-    deliver:{c:'#2b5a86',w:1.8,d:'',l:'delivers'},
-    anchor:{c:'#9c7a2e',w:1.5,d:'6 5',l:'anchors / pre-empts'},
-    preempt:{c:'#9c7a2e',w:1.5,d:'6 5'}
+    flow:{c:'#555',w:1.3,d:'',m:'ad',l:'request / data flow'},
+    seam:{c:'#9b2226',w:2.4,d:'',m:'ar',cl:'red',l:'orchestrator↔engine seam (the problem)'},
+    interleave:{c:'#9b2226',w:1.6,d:'6 4',m:'ar',cl:'red',l:'mixed-traffic interleaving'},
+    meas:{c:'#9a9a9a',w:1.2,d:'2 4',m:'ag',l:'measures / feels (annotation)'},
+    pain:{c:'#b0b0b0',w:1.1,d:'1 4',m:'',l:''},
+    project:{c:'#2c5f8a',w:1.8,d:'',m:'ab',cl:'blue',l:'this work instruments / delivers'},
+    deliver:{c:'#2c5f8a',w:1.6,d:'',m:'ab',cl:'blue'},
+    anchor:{c:'#9a9a9a',w:1.3,d:'5 5',m:'ag',l:'anchors / pre-empts'},
+    preempt:{c:'#9a9a9a',w:1.3,d:'5 5',m:''}
   };
   var byId={};N.forEach(function(n){byId[n.id]=n;});
   var world=document.getElementById('world'),svg=document.getElementById('edges'),vp=document.getElementById('vp'),tip=document.getElementById('tip');
   var NS='http://www.w3.org/2000/svg';
-  var heads=[[70,'personas / pains'],[300,'clients · agents · orchestration'],[590,'open serving engines'],[860,'vendor / hardware'],[1075,'this work & contributions']];
-  heads.forEach(function(h){var t=document.createElementNS(NS,'text');t.setAttribute('x',h[0]);t.setAttribute('y',34);t.setAttribute('text-anchor','middle');t.setAttribute('class','hdr');t.textContent=h[1];svg.appendChild(t);});
-  var mb=document.createElementNS(NS,'text');mb.setAttribute('x',250);mb.setAttribute('y',655);mb.setAttribute('class','hdr');mb.textContent='measurement & benchmarks';svg.appendChild(mb);
-  var edgeEls=[];
-  E.forEach(function(e){
-    var a=byId[e[0]],b=byId[e[1]],s=ek[e[2]];
-    var ln=document.createElementNS(NS,'line');
-    ln.setAttribute('x1',a.x);ln.setAttribute('y1',a.y);ln.setAttribute('x2',b.x);ln.setAttribute('y2',b.y);
-    ln.setAttribute('stroke',s.c);ln.setAttribute('stroke-width',s.w);ln.setAttribute('stroke-opacity','0.55');ln.setAttribute('stroke-linecap','round');
-    if(s.d)ln.setAttribute('stroke-dasharray',s.d);
-    ln._s=e[0];ln._t=e[1];ln._w=s.w;svg.appendChild(ln);edgeEls.push(ln);
-    if(e[3]){var t=document.createElementNS(NS,'text');var mx=(a.x+b.x)/2,my=(a.y+b.y)/2;t.setAttribute('x',mx);t.setAttribute('y',my-3);t.setAttribute('text-anchor','middle');t.setAttribute('class','elbl'+(e[2]==='seam'||e[2]==='interleave'?' seamlbl':''));t.textContent=e[3];svg.appendChild(t);}
+  var bandEls={};
+  bands.forEach(function(bd){
+    var r=document.createElementNS(NS,'rect');
+    r.setAttribute('x',bd.x0);r.setAttribute('y',46);r.setAttribute('width',bd.x1-bd.x0);r.setAttribute('height',610);
+    r.setAttribute('fill','#f6f6f6');r.setAttribute('stroke','#e4e4e4');r.setAttribute('stroke-width','1');r.setAttribute('rx','3');
+    svg.appendChild(r);
+    var t=document.createElementNS(NS,'text');t.setAttribute('x',bd.x0+12);t.setAttribute('y',66);t.setAttribute('class','blab');t.textContent=bd.l;svg.appendChild(t);
+    bandEls[bd.k]={r:r,t:t};
   });
+  var mline=document.createElementNS(NS,'line');mline.setAttribute('x1',180);mline.setAttribute('y1',672);mline.setAttribute('x2',985);mline.setAttribute('y2',672);mline.setAttribute('stroke','#d6d6d6');mline.setAttribute('stroke-width','1');svg.appendChild(mline);
+  var mlab=document.createElementNS(NS,'text');mlab.setAttribute('x',180);mlab.setAttribute('y',666);mlab.setAttribute('class','blab');mlab.textContent='MEASUREMENT · BENCHMARKS';svg.appendChild(mlab);
+  bandEls['measurement']={r:mline,t:mlab};
   var nodeEls={};
   N.forEach(function(n){
     var pos=document.createElement('div');pos.className='np';pos.style.left=n.x+'px';pos.style.top=n.y+'px';
-    var el=document.createElement('div');el.className='node'+(n.big?' big':'');el.style.setProperty('--nc',cats[n.cat].c);
-    el.innerHTML='<span class="tag">'+cats[n.cat].tag+'</span><div class="ttl">'+n.t+'</div><div class="sub">'+n.s+'</div>';
+    var el=document.createElement('div');el.className='node'+(n.big?' big':'');
+    el.innerHTML='<div class="ttl">'+n.t+'</div><div class="sub">'+n.s+'</div>';
     el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label',n.t);
     pos.appendChild(el);world.appendChild(pos);nodeEls[n.id]=el;n._pos=pos;
     el.addEventListener('mouseenter',function(){showTip(n);});
     el.addEventListener('mouseleave',function(){if(!sel)hideTip();});
     el.addEventListener('click',function(ev){ev.stopPropagation();select(sel===n.id?null:n.id);});
   });
-  var st={x:0,y:0,s:0.62},raf=0;
+  N.forEach(function(n){var el=nodeEls[n.id];n.hw=el.offsetWidth/2+3;n.hh=el.offsetHeight/2+3;});
+  function bound(a,b){var dx=b.x-a.x,dy=b.y-a.y,adx=Math.abs(dx)||1e-6,ady=Math.abs(dy)||1e-6,t=Math.min(b.hw/adx,b.hh/ady);return[b.x-dx*t,b.y-dy*t];}
+  var edgeEls=[];
+  E.forEach(function(e){
+    var a=byId[e[0]],b=byId[e[1]],s=ek[e[2]];
+    var p1=bound(b,a),p2=bound(a,b);
+    var ln=document.createElementNS(NS,'line');
+    ln.setAttribute('x1',p1[0]);ln.setAttribute('y1',p1[1]);ln.setAttribute('x2',p2[0]);ln.setAttribute('y2',p2[1]);
+    ln.setAttribute('stroke',s.c);ln.setAttribute('stroke-width',s.w);ln.setAttribute('stroke-opacity','0.9');ln.setAttribute('stroke-linecap','round');
+    if(s.d)ln.setAttribute('stroke-dasharray',s.d);
+    if(s.m)ln.setAttribute('marker-end','url(#'+s.m+')');
+    ln._s=e[0];ln._t=e[1];ln._w=s.w;svg.appendChild(ln);edgeEls.push(ln);
+    if(e[3]){var mx=(p1[0]+p2[0])/2,my=(p1[1]+p2[1])/2,t=document.createElementNS(NS,'text');t.setAttribute('x',mx);t.setAttribute('y',my-3);t.setAttribute('text-anchor','middle');t.setAttribute('class','elbl'+(s.cl?' '+s.cl:''));t.textContent=e[3];svg.appendChild(t);t._s=e[0];t._t=e[1];edgeEls.push(t);}
+  });
+  var st={x:0,y:0,s:.62},raf=0;
   function apply(){world.style.transform='translate('+st.x+'px,'+st.y+'px) scale('+st.s+')';if(sel)placeTipFor(byId[sel]);}
   function sched(){if(!raf)raf=requestAnimationFrame(function(){raf=0;apply();});}
   function fit(){var r=vp.getBoundingClientRect();st.s=Math.max(.3,Math.min(1.25,(r.width-40)/1200,(r.height-28)/800));st.x=(r.width-1200*st.s)/2;st.y=(r.height-800*st.s)/2;sched();}
   function showTip(n){tip.innerHTML='<span class="tt">'+n.t+'</span><span class="td">'+(n.det||n.s)+'</span>';tip.style.opacity='1';tip.style.transform='translateY(0)';placeTipFor(n);}
-  function placeTipFor(n){var r=vp.getBoundingClientRect(),sxp=st.x+n.x*st.s,syp=st.y+n.y*st.s,tw=tip.offsetWidth||220,th=tip.offsetHeight||70;var L=Math.max(8,Math.min(sxp-tw/2,r.width-tw-8)),T=syp-th-30;if(T<8)T=syp+30;tip.style.left=L+'px';tip.style.top=T+'px';}
-  function hideTip(){tip.style.opacity='0';tip.style.transform='translateY(4px)';}
+  function placeTipFor(n){var r=vp.getBoundingClientRect(),sxp=st.x+n.x*st.s,syp=st.y+n.y*st.s,tw=tip.offsetWidth||220,th=tip.offsetHeight||70,L=Math.max(8,Math.min(sxp-tw/2,r.width-tw-8)),T=syp-th-30;if(T<8)T=syp+30;tip.style.left=L+'px';tip.style.top=T+'px';}
+  function hideTip(){tip.style.opacity='0';tip.style.transform='translateY(3px)';}
   var sel=null;
   function nb(id){var s={};s[id]=1;E.forEach(function(e){if(e[0]===id)s[e[1]]=1;if(e[1]===id)s[e[0]]=1;});return s;}
   function select(id){
     sel=id;
-    if(!id){N.forEach(function(n){nodeEls[n.id].classList.remove('sel','dim');});edgeEls.forEach(function(l){l.classList.remove('dim');l.setAttribute('stroke-opacity','0.55');l.setAttribute('stroke-width',l._w);});hideTip();return;}
+    if(!id){N.forEach(function(n){nodeEls[n.id].classList.remove('sel','dim');});edgeEls.forEach(function(l){l.classList.remove('dim');});hideTip();return;}
     var s=nb(id);
     N.forEach(function(n){var el=nodeEls[n.id];el.classList.toggle('sel',n.id===id);el.classList.toggle('dim',!s[n.id]);});
-    edgeEls.forEach(function(l){var on=(l._s===id||l._t===id);l.classList.toggle('dim',!on);l.setAttribute('stroke-opacity',on?'1':'0.1');l.setAttribute('stroke-width',on?(l._w+0.8):l._w);});
+    edgeEls.forEach(function(l){l.classList.toggle('dim',!(l._s===id||l._t===id));});
     showTip(byId[id]);
   }
   var drag=null;
@@ -188,19 +195,21 @@
   document.getElementById('zout').onclick=function(){zc(0.83);};
   document.getElementById('zfit').onclick=function(){select(null);fit();};
   var chips=document.getElementById('chips'),hidden={};
-  Object.keys(cats).forEach(function(k){
-    var b=document.createElement('button');b.className='chip';b.style.setProperty('--cc',cats[k].c);
-    b.innerHTML='<span class="cd"></span>'+cats[k].l;
+  var clabels={personas:'personas',clients:'clients',engines:'engines',vendor:'vendor',measurement:'measurement',contributions:'this work'};
+  Object.keys(clabels).forEach(function(k){
+    var b=document.createElement('button');b.className='chip';
+    b.innerHTML='<span class="cd"></span>'+clabels[k];
     b.onclick=function(){hidden[k]=!hidden[k];b.classList.toggle('off',hidden[k]);
-      N.forEach(function(n){if(n.cat===k)n._pos.style.display=hidden[k]?'none':'';});
-      edgeEls.forEach(function(l){l.style.display=(hidden[byId[l._s].cat]||hidden[byId[l._t].cat])?'none':'';});
+      N.forEach(function(n){if(b2[n.cat]===k)n._pos.style.display=hidden[k]?'none':'';});
+      if(bandEls[k]){bandEls[k].r.style.display=hidden[k]?'none':'';bandEls[k].t.style.display=hidden[k]?'none':'';}
+      edgeEls.forEach(function(l){l.style.display=(hidden[b2[byId[l._s].cat]]||hidden[b2[byId[l._t].cat]])?'none':'';});
     };
     chips.appendChild(b);
   });
   var key=document.getElementById('key');
-  [['seam','#c0562a'],['interleave','#c0562a'],['flow','#9aa3af'],['project','#1f3a5f'],['deliver','#2b5a86'],['meas','#6a5a92'],['pain','#9a4b52'],['anchor','#9c7a2e']].forEach(function(kk){
-    var e=ek[kk[0]],sp=document.createElement('span');sp.className='k';
-    sp.innerHTML='<span class="ks" style="border-top-color:'+kk[1]+';border-top-style:'+(e.d?'dashed':'solid')+';border-top-width:'+(e.w>2?3:2)+'px"></span>'+e.l;
+  [['seam','#9b2226','solid',2.4],['interleave','#9b2226','dashed',1.6],['project','#2c5f8a','solid',1.8],['flow','#555','solid',1.3],['meas','#9a9a9a','dashed',1.2]].forEach(function(kk){
+    var sp=document.createElement('span');sp.className='k';
+    sp.innerHTML='<span class="ks" style="border-top:'+(kk[3]>2?2.5:1.6)+'px '+kk[2]+' '+kk[1]+'"></span>'+ek[kk[0]].l;
     key.appendChild(sp);
   });
   window.addEventListener('resize',function(){if(!sel)fit();});

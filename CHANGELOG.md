@@ -20,6 +20,9 @@ here whenever you make a substantive change.*
 
 ## Log
 
+### 2026-06-14 — Ecosystem figure restyled to NeurIPS/ICLR look
+Replaced the "AI-generated" palette (ivory background, ~8 hue accents, rounded frosted cards) in `docs/ecosystem-map.html` with a **systems-paper figure aesthetic**: pure-white canvas, **titled group boxes** (PERSONAS · CLIENTS · OPEN SERVING ENGINES · VENDOR · THIS WORK), grayscale white-fill nodes with thin black borders, Helvetica labels + a Times figure caption/key, and **directed arrowheads** trimmed to box borders. Color is now **functional and two-tone only** — red = the orchestrator↔engine seam / interleaving (the problem), blue = this work / its outputs (the contribution); everything else black/gray. Verified via headless-Chrome render.
+
 ### 2026-06-14 — Academic redesign of the ecosystem figure + wrong-layer-tools note
 - Rebuilt `docs/ecosystem-map.html` from the rounded/"AI-generated" look into an **academic "Figure 1" style**: left-to-right tiered dataflow with serif column headers, rectangular nodes (category tag + title + description), **labeled edges** (the seam, mixed-traffic interleaving, the measurement arrow, pre-emption, anchoring), an edge-type **key**, and a figure **caption**. Added nodes for the *chat co-tenant* (the interleaving driver) and the *Cost-of-Pass anchor*. Verified the layout via headless-Chrome render; fixed an auto-fit bug that clipped the measurement band.
 - Extended `docs/observability-and-power.md` with **"wrong-layer tools"**: GPU profilers (Nsight Compute/Systems) and reuse predictors (Tencent FlashMemory `2606.09079`) **cannot** source per-tenant eviction attribution — profilers live at the hardware/kernel layer (no notion of request/tenant/KV-block); the predictor is an intra-request *mechanism*, not cross-tenant observability, and adopting it would make us a mechanism paper. Attribution stays an engine block-manager fact.

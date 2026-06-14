@@ -20,6 +20,9 @@ here whenever you make a substantive change.*
 
 ## Log
 
+### 2026-06-14 — Observability/power doc + interactive ecosystem map
+Added `docs/observability-and-power.md` — makes the two BLOCKER issues concrete: (§1) the cache *is* visible per-request off-the-shelf today (vLLM `prefix_cache_hits/queries` + `num_cached_tokens`, SchedulerStats evictions, SGLang/LMCache metrics); the only gap is per-tenant eviction attribution, solved by request-tagging → optional small block-manager hook → footprint-matched proxy, de-risked by a 1-day spike before GPU spend; (§2) **replay is a *different, easier* problem** than instrumentation — it needs only what our harness logs (the recorded request/block stream), not engine internals, so `available − realized = locality gap`; (§3) statistical soundness = denominator floor (#14) + pre-registered MDE/power bootstrapped over tasks (#7) + measured success-invariance (#12). Added `docs/ecosystem-map.html` — self-contained, dependency-free interactive ecosystem map (drag-pan, scroll-zoom, hover-detail, click-to-focus). Rollback: delete the two files + their README pointers.
+
 ### 2026-06-14 — Removed IP/disclosure framing; added one-page overview
 Per direction, **purged the NVIDIA-disclosure / IP- & employer-publication-review framing** entirely (`stakeholders.md`, `STATUS.md` open-decisions + repo map, `threats-to-validity.md` #7, reading-map #10, `candidates.md` C5, and the CHANGELOG). The open-infra / public-benchmark scope is retained but reframed as a **reproducibility** choice, not an IP one. Added `docs/overview.md` (one-page reference: what / landscape / gap / problem / approach / limitations).
 

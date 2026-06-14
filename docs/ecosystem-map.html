@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic-serving ecosystem map</title>
+<style>
+  :root{
+    --bg:#f6f6f4; --surface:#ffffff; --surface2:#eeeeec; --frost:rgba(255,255,255,.78);
+    --text:#1b1b19; --text2:#6a6a64; --text3:#9a9a92; --border:rgba(0,0,0,.12); --border2:rgba(0,0,0,.22);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#1b1b19; --surface:#262624; --surface2:#33332f; --frost:rgba(38,38,36,.74);
+      --text:#ededea; --text2:#a9a9a2; --text3:#74746d; --border:rgba(255,255,255,.14); --border2:rgba(255,255,255,.28);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+  header{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;gap:10px;padding:14px 18px;flex-wrap:wrap}
+  h1{font-size:15px;font-weight:600;margin:0 14px 0 0;letter-spacing:-.01em}
+  #chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font:inherit;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--cc);color:var(--text);background:transparent;cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:6px;transition:opacity .18s}
+  .chip .cd{width:8px;height:8px;border-radius:50%;background:var(--cc)}
+  .chip.off{opacity:.36}
+  .tools{margin-left:auto;display:flex;gap:6px}
+  .tb{width:36px;height:36px;border-radius:11px;border:1px solid var(--border2);background:var(--frost);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .12s}
+  .tb:active{transform:scale(.93)}
+  #vp{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none}
+  #vp.grab{cursor:grabbing}
+  #world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+  #edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+  .np{position:absolute;transform:translate(-50%,-50%);z-index:2}
+  .node{box-sizing:border-box;width:150px;padding:9px 11px;border-radius:15px;background:var(--surface);border:1.5px solid var(--nc);box-shadow:0 1px 3px rgba(0,0,0,.08);font-size:12.5px;line-height:1.28;color:var(--text);cursor:pointer;transition:transform .24s cubic-bezier(.22,1,.36,1),box-shadow .24s ease,opacity .2s ease}
+  .node:hover{transform:scale(1.05);box-shadow:0 14px 34px rgba(0,0,0,.18)}
+  .node .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--nc);margin-right:7px;vertical-align:middle}
+  .node.big{width:182px;border-width:2px}
+  .node.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--nc) 42%,transparent),0 16px 36px rgba(0,0,0,.24);transform:scale(1.07)}
+  .dim{opacity:.2 !important}
+  #tip{position:absolute;left:0;top:0;max-width:248px;padding:11px 13px;border-radius:15px;background:var(--frost);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border2);box-shadow:0 12px 40px rgba(0,0,0,.22);opacity:0;transform:translateY(5px) scale(.97);transition:opacity .18s ease,transform .22s cubic-bezier(.22,1,.36,1);pointer-events:none;z-index:20;font-size:13px;line-height:1.5}
+  #tip .tt{font-weight:600;display:block;margin-bottom:3px}
+  #tip .td{color:var(--text2)}
+  #hint{position:absolute;right:14px;bottom:14px;z-index:10;font-size:11px;color:var(--text3);background:var(--frost);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:5px 10px;border-radius:9px;pointer-events:none}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header>
+  <h1>agentic-serving ecosystem</h1>
+  <div id="chips"></div>
+  <div class="tools">
+    <button class="tb" id="zin" aria-label="Zoom in">+</button>
+    <button class="tb" id="zout" aria-label="Zoom out">&minus;</button>
+    <button class="tb" id="zfit" aria-label="Reset view">&#10530;</button>
+  </div>
+</header>
+<p class="sr">Interactive map of the agentic LLM serving ecosystem: agent apps, orchestrators, serving engines, vendors, mechanisms, benchmarks, personas, and where this project (an open cost-per-verified-task meter) sits. Drag to pan, scroll to zoom, click a node to focus its relationships.</p>
+<div id="vp">
+  <div id="world"><svg id="edges" width="1200" height="760"></svg></div>
+  <div id="tip" role="status"></div>
+  <div id="hint">drag to pan &middot; scroll to zoom &middot; click a node to focus</div>
+</div>
+<script>
+(function(){
+  var cats={
+    project:{c:'#2563a8',l:'This project'},
+    app:{c:'#33527a',l:'Agent apps'},
+    serve:{c:'#2e8f72',l:'Serving stack'},
+    mech:{c:'#c07a18',l:'Mechanisms (crowded)'},
+    meas:{c:'#7a5fb0',l:'Measurement'},
+    persona:{c:'#23934a',l:'Personas'},
+    oppty:{c:'#2a9bbf',l:'Opportunities'}
+  };
+  var N=[
+    {id:'P',cat:'project',x:780,y:540,big:1,t:'The open meter',d:'cost-per-verified-task + a public mixed trace. Measures the value lost at the seam, on open infra — the empty intersection no one occupies.'},
+    {id:'A',cat:'app',x:300,y:140,t:'Agent apps',d:'Cursor, Claude Code, Codex, OpenHands — long tool-loops; context grows monotonically.'},
+    {id:'O',cat:'app',x:300,y:320,t:'Orchestrators',d:'LangGraph, CrewAI, OpenAI Agents SDK — drive the loop; workflow-agnostic to the engine.'},
+    {id:'E1',cat:'serve',x:560,y:250,t:'vLLM',d:'open serving engine; PagedAttention + prefix caching. One of our two measured engines.'},
+    {id:'E2',cat:'serve',x:560,y:420,t:'SGLang',d:'open serving engine; RadixAttention prefix reuse. The best-case reuse ceiling.'},
+    {id:'KV',cat:'serve',x:560,y:100,t:'KV infra',d:'Mooncake, LMCache, llm-d — distributed KV pools and offload.'},
+    {id:'V1',cat:'serve',x:820,y:300,t:'NVIDIA Dynamo',d:'KV-aware router + agent hints — the declared contract, already shipping.'},
+    {id:'M',cat:'mech',x:540,y:585,t:'Agent-serving mechanisms',d:'KVFlow, Continuum/CacheTTL, SAGA, ThunderAgent, Helium, Cortex, HexAGenT, TokenCake — everyone is building the fix; that is why we measure instead.'},
+    {id:'B1',cat:'meas',x:300,y:660,t:'AA-AgentPerf',d:'agents-per-megawatt under SLO; closed test set; no cost-per-task.'},
+    {id:'B2',cat:'meas',x:560,y:705,t:'InferenceX',d:'cost-per-token / throughput; general serving, not agentic.'},
+    {id:'B3',cat:'meas',x:300,y:500,t:'SWE-bench / tau2 / HAL',d:'task benchmarks; HAL is cost-aware. We run on SWE-bench Verified + tau2-bench.'},
+    {id:'U1',cat:'persona',x:70,y:120,t:'Platform / serving eng',d:'Pain: cannot explain why agents cost ~5x chat; cache misses when chat and agents share a GPU.'},
+    {id:'U2',cat:'persona',x:70,y:250,t:'Agent product builder',d:'Pain: cost blows up at long horizons; $/token looks fine but $/completed-task explodes.'},
+    {id:'U3',cat:'persona',x:70,y:380,t:'ML-systems researcher',d:'Pain: no public agentic+cost trace; cannot compare engines/configs fairly.'},
+    {id:'U4',cat:'persona',x:70,y:510,t:'Eng leadership / FinOps',d:'Pain: unpredictable token bills; no cost-per-successful-task meter to budget against.'},
+    {id:'Z1',cat:'oppty',x:1060,y:170,t:'Cost-of-Grit meter',d:'the locality-tax curve — cost per completed task. (= our C1.)'},
+    {id:'Z2',cat:'oppty',x:1080,y:330,t:'Public mixed trace',d:'mixed chat+agent, cost-labeled, open-infra. None exists. (= our C3.)'},
+    {id:'Z3',cat:'oppty',x:1060,y:500,t:'Hint contract',d:'declared vs inferred. Pre-empted by Dynamo — so we measure its value, not propose it.'}
+  ];
+  var E=[
+    ['A','O','flow'],['U2','A','pain'],
+    ['O','E1','seam'],['O','E2','seam'],
+    ['KV','E1','flow'],['KV','E2','flow'],
+    ['M','E1','flow'],['M','E2','flow'],
+    ['E1','V1','flow'],['E2','V1','flow'],
+    ['U1','E1','pain'],['U4','V1','pain'],['U3','B3','pain'],
+    ['B1','V1','meas'],['B2','E1','meas'],['B3','A','meas'],
+    ['P','E1','meas'],['P','V1','meas'],
+    ['P','Z1','give'],['P','Z2','give'],['P','Z3','give'],
+    ['Z3','V1','pre']
+  ];
+  var ek={flow:{c:'#9aa3af',w:1.5,d:''},seam:{c:'#c0562a',w:2.6,d:''},meas:{c:'#7a6aa8',w:1.4,d:'2 5'},pain:{c:'#3a8f57',w:1.4,d:'2 5'},give:{c:'#2563a8',w:2,d:''},pre:{c:'#c07a18',w:1.6,d:'6 5'}};
+  var byId={}; N.forEach(function(n){byId[n.id]=n;});
+  var world=document.getElementById('world'),svg=document.getElementById('edges'),vp=document.getElementById('vp'),tip=document.getElementById('tip');
+  var NS='http://www.w3.org/2000/svg',edgeEls=[];
+  E.forEach(function(e){
+    var a=byId[e[0]],b=byId[e[1]],s=ek[e[2]],ln=document.createElementNS(NS,'line');
+    ln.setAttribute('x1',a.x);ln.setAttribute('y1',a.y);ln.setAttribute('x2',b.x);ln.setAttribute('y2',b.y);
+    ln.setAttribute('stroke',s.c);ln.setAttribute('stroke-width',s.w);ln.setAttribute('stroke-opacity','0.5');ln.setAttribute('stroke-linecap','round');
+    if(s.d)ln.setAttribute('stroke-dasharray',s.d);
+    ln._s=e[0];ln._t=e[1];ln._w=s.w;svg.appendChild(ln);edgeEls.push(ln);
+  });
+  var sl=document.createElementNS(NS,'text');
+  sl.setAttribute('x',412);sl.setAttribute('y',356);sl.setAttribute('fill','#c0562a');sl.setAttribute('font-size','12');sl.setAttribute('font-family','inherit');
+  sl.textContent='the seam';svg.appendChild(sl);
+  var nodeEls={};
+  N.forEach(function(n){
+    var pos=document.createElement('div');pos.className='np';pos.style.left=n.x+'px';pos.style.top=n.y+'px';
+    var el=document.createElement('div');el.className='node'+(n.big?' big':'');el.style.setProperty('--nc',cats[n.cat].c);
+    el.innerHTML='<span class="dot"></span>'+n.t;el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label',n.t);
+    pos.appendChild(el);world.appendChild(pos);nodeEls[n.id]=el;n._pos=pos;
+    el.addEventListener('mouseenter',function(){showTip(n);});
+    el.addEventListener('mouseleave',function(){if(!sel)hideTip();});
+    el.addEventListener('click',function(ev){ev.stopPropagation();select(sel===n.id?null:n.id);});
+  });
+  var st={x:0,y:0,s:0.78},raf=0;
+  function apply(){world.style.transform='translate('+st.x+'px,'+st.y+'px) scale('+st.s+')';if(sel)placeTipFor(byId[sel]);}
+  function sched(){if(!raf)raf=requestAnimationFrame(function(){raf=0;apply();});}
+  function fit(){var r=vp.getBoundingClientRect();st.s=Math.min(1.1,Math.max(.5,(r.width-80)/1200));st.x=(r.width-1200*st.s)/2+40;st.y=(r.height-760*st.s)/2+30;sched();}
+  function showTip(n){tip.innerHTML='<span class="tt">'+n.t+'</span><span class="td">'+n.d+'</span>';tip.style.opacity='1';tip.style.transform='translateY(0) scale(1)';placeTipFor(n);}
+  function placeTipFor(n){var r=vp.getBoundingClientRect();var sxp=st.x+n.x*st.s,syp=st.y+n.y*st.s,tw=tip.offsetWidth||220,th=tip.offsetHeight||80;var L=Math.max(8,Math.min(sxp-tw/2,r.width-tw-8)),T=syp-th-28;if(T<8)T=syp+28;tip.style.left=L+'px';tip.style.top=T+'px';}
+  function hideTip(){tip.style.opacity='0';tip.style.transform='translateY(5px) scale(.97)';}
+  var sel=null;
+  function neighbors(id){var s={};s[id]=1;E.forEach(function(e){if(e[0]===id)s[e[1]]=1;if(e[1]===id)s[e[0]]=1;});return s;}
+  function select(id){
+    sel=id;
+    if(!id){N.forEach(function(n){nodeEls[n.id].classList.remove('sel','dim');});edgeEls.forEach(function(l){l.classList.remove('dim');l.setAttribute('stroke-opacity','0.5');l.setAttribute('stroke-width',l._w);});hideTip();return;}
+    var nb=neighbors(id);
+    N.forEach(function(n){var el=nodeEls[n.id];el.classList.toggle('sel',n.id===id);el.classList.toggle('dim',!nb[n.id]);});
+    edgeEls.forEach(function(l){var on=(l._s===id||l._t===id);l.classList.toggle('dim',!on);l.setAttribute('stroke-opacity',on?'1':'0.12');l.setAttribute('stroke-width',on?(l._w+1):l._w);});
+    showTip(byId[id]);
+  }
+  var drag=null;
+  vp.addEventListener('pointerdown',function(e){if(e.target.closest('.node'))return;drag={x:e.clientX,y:e.clientY};vp.classList.add('grab');vp.setPointerCapture(e.pointerId);if(sel)select(null);});
+  vp.addEventListener('pointermove',function(e){if(!drag)return;st.x+=e.clientX-drag.x;st.y+=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;sched();});
+  vp.addEventListener('pointerup',function(){drag=null;vp.classList.remove('grab');});
+  vp.addEventListener('pointercancel',function(){drag=null;vp.classList.remove('grab');});
+  vp.addEventListener('wheel',function(e){e.preventDefault();var r=vp.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,wx=(mx-st.x)/st.s,wy=(my-st.y)/st.s,ns=Math.max(.4,Math.min(2.6,st.s*(e.deltaY<0?1.12:0.89)));st.x=mx-wx*ns;st.y=my-wy*ns;st.s=ns;sched();},{passive:false});
+  function zoomC(f){var r=vp.getBoundingClientRect(),mx=r.width/2,my=r.height/2,wx=(mx-st.x)/st.s,wy=(my-st.y)/st.s,ns=Math.max(.4,Math.min(2.6,st.s*f));st.x=mx-wx*ns;st.y=my-wy*ns;st.s=ns;sched();}
+  document.getElementById('zin').onclick=function(){zoomC(1.2);};
+  document.getElementById('zout').onclick=function(){zoomC(0.83);};
+  document.getElementById('zfit').onclick=function(){select(null);fit();};
+  var chips=document.getElementById('chips'),hidden={};
+  Object.keys(cats).forEach(function(k){
+    var b=document.createElement('button');b.className='chip';b.style.setProperty('--cc',cats[k].c);
+    b.innerHTML='<span class="cd"></span>'+cats[k].l;
+    b.onclick=function(){hidden[k]=!hidden[k];b.classList.toggle('off',hidden[k]);
+      N.forEach(function(n){if(n.cat===k)n._pos.style.display=hidden[k]?'none':'';});
+      edgeEls.forEach(function(l){l.style.display=(hidden[byId[l._s].cat]||hidden[byId[l._t].cat])?'none':'';});
+    };
+    chips.appendChild(b);
+  });
+  window.addEventListener('resize',function(){if(!sel)fit();});
+  fit();
+})();
+</script>
+</body>
+</html>

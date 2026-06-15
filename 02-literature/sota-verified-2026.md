@@ -168,6 +168,16 @@ Progress" 2511.23455 · HAL accuracy-cost Pareto 2510.11977 · Observation-Maski
 2512.18470 · AppWorld 2407.18901 · τ²-bench · GAIA · BFCL v4. (Pilot now runs τ² **+ SWE-bench Verified** —
 the long-horizon arm where the gap is visible; see `../05-experiments/pilot/experiments/matrix.yaml`.)
 
+## 2026-06-14 pass-4 (latest-literature sweep + repo crawl)
+
+*New entrants found via live search this pass; venues web-checked where stated.*
+- **GORGO** — 2602.11688 ✓ — *cross-region* LLM load balancing that maximizes KV-cache reuse **while** minimizing network latency; network-aware routing, ~2.5× faster median TTFT vs prior KV-hit-maximizing routers. Relevant to the *placement* axis (where reused KV lives across regions) and to the TTFT framing.
+- **Pie** — SOSP'25 (ACM DL `10.1145/3731569.3764814`) ✓ — a **programmable serving system for emerging LLM applications** (agents/structured programs as first-class); a top-venue signal that "serving for agentic programs" is now its own systems topic.
+- **ProphetKV** — 2602.02579 ✓ — user-query-driven selective recomputation for KV reuse in **RAG** (adjacent: RAG, not agent loops).
+- **Prefill-as-a-Service** — 2604.15039 ✓ — argues next-gen KVCache could go **cross-datacenter** (placement/disaggregation frontier).
+- **KVFlow venue confirmed:** 2507.07400 is a **NeurIPS 2025** poster (neurips.cc/virtual/2025/poster) — promote the venue where cited.
+- **Watch (web-found, not yet deep-read):** *TimelyLLM* (time-sensitive serving for physical-I/O agents); *Graph-CoT multi-agent serving* (2511.01633); *Agent Memory Below the Prompt* (2603.04428 — a **distinct** edge / Q4-KV multi-agent paper, NOT the Stanford "Agent Memory" 2606.06448; the old guessed-id confusion is now resolved as two real, different papers).
+
 ## Foundations (verified 2026-06-13 per the working brief)
 
 PagedAttention/vLLM 2309.06180 ✓ · Orca (OSDI'22, no arXiv) ✓ · SGLang/RadixAttention 2312.07104 ✓ ·

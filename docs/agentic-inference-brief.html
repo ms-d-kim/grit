@@ -44,7 +44,7 @@
 <body>
 
 <h1>GRIT &mdash; Master Brief</h1>
-<p class="deck"><b>Last updated: 2026-06-14 17:13 PDT</b> &middot; GRIT (GPU Reuse under Interleaved Traffic) &middot; the single document to learn agents, the serving ecosystem, the literature, the tools, and this project &middot; Target: MLSys 2027 Industry Track (~Oct 2026, provisional) &middot; public benchmarks + open infrastructure only</p>
+<p class="deck"><b>Last updated: 2026-06-14 17:22 PDT</b> &middot; GRIT (GPU Reuse under Interleaved Traffic) &middot; the single document to learn agents, the serving ecosystem, the literature, the tools, the project, and to prep for the NVIDIA inference-PM role &middot; Target: MLSys 2027 Industry Track (~Oct 2026, provisional) &middot; public benchmarks + open infrastructure only</p>
 
 <div class="callout">
 <h4>How to read this document</h4>
@@ -56,12 +56,13 @@
 1. Executive summary — what GRIT is<br>
 2. How LLM inference works (the mental model)<br>
 3. What an agent is, and why it stresses serving differently<br>
-4. The ecosystem and the orchestrator&harr;engine seam<br>
+4. The ecosystem, the seam, and the product/PM lens<br>
 5. The literature, annotated (foundations &rarr; frontier)<br>
-6. The tools you will actually use<br>
+6. The tools + the open-source landscape (repo crawl)<br>
 7. The GRIT project — problem, metric, pilot, threats, status<br>
-8. Open questions, the benchmark&harr;production gap, who to talk to<br>
-9. Next actions · reading queue · unverified citations
+8. For the NVIDIA inference-PM role<br>
+9. Open questions, the benchmark&harr;production gap, who to talk to<br>
+10. Next actions · reading queue · unverified citations
 </div>
 
 <h2 id="s1">1. Executive summary — what GRIT is</h2>
@@ -110,7 +111,7 @@
 <p>The emerging tool-interface standard — the &ldquo;pauses&rdquo; in the loop are MCP/tool calls.</p></div>
 <p class="rel"><b>Why this matters to GRIT:</b> the high re-entry + growing prefix is the source of <i>available</i> reuse; the tool gaps + long-lived KV are where eviction under shared load destroys <i>realized</i> reuse. The gap between the two is the whole study.</p>
 
-<h2 id="s4">4. The ecosystem and the orchestrator&harr;engine seam</h2>
+<h2 id="s4">4. The ecosystem, the seam, and the product/PM lens</h2>
 <p>The interactive version of this map is <code>docs/ecosystem-map.html</code> (a systems-paper &ldquo;Figure 1&rdquo;). In words, the stack runs left-to-right:</p>
 <ul>
 <li><b>Clients &amp; agents</b> — coding agents (Cursor, Claude Code, Codex, OpenHands), web/computer-use agents, and <b>chat/RAG traffic</b> (the co-tenant in mixed serving).</li>
@@ -134,7 +135,26 @@
 <tr><td>Agent product builder</td><td>$/token looks fine but $/completed-task explodes at long horizons</td><td>the Cost-of-Grit curve</td></tr>
 <tr><td>ML-systems researcher</td><td>no public mixed, cost-labeled agent trace; can&rsquo;t compare engines fairly</td><td>the released trace (C3)</td></tr>
 <tr><td>Eng leadership / FinOps</td><td>unpredictable bills; no cost-per-successful-task meter</td><td>a budgetable meter</td></tr>
+<tr><td>Inference-vendor PM (NVIDIA)</td><td>no open, neutral measurement of where agent cost actually goes — hard to prioritize what to build</td><td>the open meter as a north-star signal (&rarr; §8)</td></tr>
 </tbody></table>
+
+<h3>User journeys (the pain in motion)</h3>
+<ol>
+<li><b>The surprise bill</b> (agent startup): usage scales, the token bill 4&times;s, per-token price is unchanged — but <b>cost per completed task exploded at long horizons</b> and nothing shows why. &rarr; needs the cost-of-grit meter.</li>
+<li><b>The platform team&rsquo;s blind spot</b> (infra eng): they co-locate chat + agents to save GPUs; agent latency/cost spikes; they suspect eviction, but the engine exposes only an <b>aggregate</b> hit rate, not &ldquo;did chat evict <i>this agent&rsquo;s</i> cache.&rdquo; &rarr; needs per-tenant attribution + the locality-gap metric.</li>
+<li><b>The apples-to-oranges comparison</b> (researcher): wants vLLM vs. SGLang for agents, but there is no public mixed trace and no standard cost-per-task metric, so every paper measures differently. &rarr; needs the open trace + the metric.</li>
+</ol>
+
+<h3>Pain &rarr; opportunity (the product / business view)</h3>
+<table><thead><tr><th>Pain (market)</th><th>Opportunity</th><th>Who captures it</th><th>GRIT?</th></tr></thead><tbody>
+<tr><td>Cost grows super-linearly with horizon, hidden by $/token</td><td>the <b>meter</b>: cost-per-verified-task (the locality-tax curve)</td><td>researchers + FinOps + vendors</td><td>✅ C1 (paper)</td></tr>
+<tr><td>Cache reuse collapses under shared / bounded cache</td><td>quantify the realized-vs-available gap; the <b>value of awareness</b></td><td>serving teams</td><td>✅ C1 / H1</td></tr>
+<tr><td>No per-tenant cost / eviction visibility</td><td>instrumentation + attribution methodology</td><td>platform teams, vendor (Dynamo)</td><td>partial (paper measures; product builds)</td></tr>
+<tr><td>Orchestrator&harr;engine seam (declared vs inferred)</td><td>a hint contract / standard</td><td>vendors (Dynamo), llm-d / Gateway</td><td>⚠ pre-empted (Dynamo); measure its value</td></tr>
+<tr><td>No public agentic + cost-labeled trace</td><td>release the trace</td><td>the commons</td><td>✅ C3 (artifact)</td></tr>
+<tr><td>Can&rsquo;t compare engines/configs fairly</td><td>reproducible open-infra benchmark + metric</td><td>the commons</td><td>✅ bundled with C1/C3</td></tr>
+</tbody></table>
+<p class="rel"><b>Where GRIT plays vs. the product side:</b> the <b>open measurement</b> (the meter + the trace, rows marked ✅) is the <i>paper</i>. The <b>productized</b> versions — building the meter into a serving stack or a FinOps SaaS, shipping the hint contract — are the <b>product / internship</b> side (the &ldquo;C5&rdquo; twin), out of the paper&rsquo;s scope but the bridge to the NVIDIA PM role (§8). Full companion: <code>docs/ecosystem-and-product-map.md</code> (relational graph + mindmap + personas/journeys) and the interactive <code>docs/ecosystem-map.html</code> (Figure 1).</p>
 
 <h2 id="s5">5. The literature, annotated</h2>
 <p>Every entry below is <span class="ok">✓</span> in the ledger. Paragraph summaries for the load-bearing papers; grouped one-liners for the rest. <b>Relevance-to-GRIT</b> is highlighted where it matters.</p>
@@ -192,6 +212,9 @@
 <p class="small"><b>NVIDIA Dynamo</b> — KV-aware router (global KV-block index, overlap-score placement) + agent hints (<code>nvext.agent_hints</code> = priority/osl/speculative_prefill + <code>cache_control</code> TTL); reports 85–97% Claude-Code cache hit (<i>realized under its own routing — not infinite-cache &ldquo;available&rdquo;</i>); no multi-tenant interleaving analysis, no released traces. <b>AA-AgentPerf</b> (Artificial Analysis) — agents-per-megawatt under SLO tiers on real coding trajectories; test set <i>closed</i>; cost-per-success is future work. <b>InferenceX / InferenceMAX</b> (SemiAnalysis) — open $/token / throughput, not agentic. <b>NemoClaw / OpenShell</b> — autonomous-agent blueprints + sandboxed runtime.</p>
 <p class="rel"><b>Net for GRIT:</b> C4 (a hint <i>spec</i>) is <b>pre-empted</b> by Dynamo; re-scope to measuring the value of existing hints. C1 (cost-per-verified-task tied to cache) and C3 (a mixed, cost-labeled, open trace) stay distinct and are <i>strengthened</i> by the fact that the vendor numbers are realized-only and the test sets/traces are closed.</p>
 
+<h3>5g. Newest entrants (June-2026 sweep)</h3>
+<p class="small"><b>GORGO</b> (2602.11688 <span class="ok">✓</span>) — cross-region load balancing that maximizes KV-cache reuse <i>while</i> minimizing network latency (~2.5&times; faster median TTFT): the <b>placement</b> axis (where reused KV lives across regions). <b>Pie</b> (SOSP&rsquo;25, ACM DL 10.1145/3731569.3764814 <span class="ok">✓</span>) — a <i>programmable serving system for emerging LLM applications</i> (agents/structured programs as first-class): a top-venue signal that &ldquo;serving for agentic programs&rdquo; is now its own systems topic. <b>KVFlow</b> is a confirmed <b>NeurIPS 2025</b> poster. Adjacent (RAG &amp; cross-DC frontier): ProphetKV (2602.02579 <span class="ok">✓</span>, selective recompute for RAG), Prefill-as-a-Service (2604.15039 <span class="ok">✓</span>, cross-datacenter KVCache). <span class="warn">Watch (web-found, not deep-read):</span> TimelyLLM (time-sensitive serving for physical-I/O agents); Graph-CoT multi-agent serving (2511.01633); Agent Memory Below the Prompt (2603.04428 — a <i>distinct</i> edge/Q4-KV paper, not the Stanford 2606.06448).</p>
+
 <h2 id="s6">6. The tools you will actually use</h2>
 <ul>
 <li><b>vLLM</b> (<code>--enable-prefix-caching</code>) — the open baseline engine. Exposes <code>vllm:prefix_cache_queries</code> / <code>vllm:prefix_cache_hits</code> Prometheus counters and per-request <code>num_cached_tokens</code> — GRIT&rsquo;s realized-reuse source.</li>
@@ -201,6 +224,35 @@
 <li><b>Benchmark harnesses:</b> SWE-bench&rsquo;s <code>FAIL_TO_PASS</code> oracle; &tau;&sup2;-bench&rsquo;s success check; HAL for cost-aware scoring.</li>
 <li><b>The GRIT harness:</b> <code>05-experiments/pilot/harness/trace_schema.py</code> (the measurement contract — runs/smoke-tested) and <code>run_pilot.py</code> (the orchestration skeleton with co-design seams). <b>Wrong-layer tools:</b> GPU profilers (Nsight Compute/Systems) and reuse predictors (Tencent FlashMemory) cannot source per-tenant eviction attribution — it is an engine block-manager fact (see <code>docs/observability-and-power.md</code>).</li>
 </ul>
+
+<h3>The open-source landscape — GitHub stars (crawled 2026-06-14)</h3>
+<p class="small">A rough map of where the energy is. Agent <i>harnesses/frameworks</i> dwarf serving engines in stars (they are user-facing), but the serving/KV layer is where GRIT&rsquo;s measurement lives — the less-crowded side of the stack.</p>
+<table><thead><tr><th>Repo</th><th>★ (k)</th><th>What it is</th></tr></thead><tbody>
+<tr><td>Significant-Gravitas/AutoGPT</td><td>185</td><td>the original autonomous-agent project</td></tr>
+<tr><td>ggml-org/llama.cpp</td><td>117</td><td>CPU/edge LLM inference in C/C++</td></tr>
+<tr><td>browser-use/browser-use</td><td>99</td><td>web / computer-use agent</td></tr>
+<tr><td><b>vllm-project/vllm</b></td><td>83</td><td><b>open serving engine — GRIT baseline</b></td></tr>
+<tr><td>OpenHands/OpenHands</td><td>77</td><td>coding-agent harness</td></tr>
+<tr><td>FoundationAgents/MetaGPT</td><td>69</td><td>multi-agent framework</td></tr>
+<tr><td>cline/cline</td><td>63</td><td>autonomous coding agent (IDE/CLI/SDK)</td></tr>
+<tr><td>microsoft/autogen</td><td>59</td><td>agentic-AI programming framework</td></tr>
+<tr><td>crewAIInc/crewAI</td><td>54</td><td>role-playing multi-agent orchestration</td></tr>
+<tr><td>Aider-AI/aider</td><td>46</td><td>terminal AI pair-programming</td></tr>
+<tr><td>langchain-ai/langgraph</td><td>35</td><td>agent orchestration graph</td></tr>
+<tr><td>langfuse/langfuse</td><td>29</td><td>LLM/agent observability (OTel-native)</td></tr>
+<tr><td><b>sgl-project/sglang</b></td><td>29</td><td><b>open serving engine — RadixAttention; GRIT</b></td></tr>
+<tr><td>openai/openai-agents-python</td><td>27</td><td>OpenAI Agents SDK</td></tr>
+<tr><td>SWE-agent/SWE-agent</td><td>20</td><td>issue-fixing agent (NeurIPS&rsquo;24)</td></tr>
+<tr><td>QwenLM/Qwen-Agent</td><td>17</td><td>Qwen agent framework (GRIT&rsquo;s model family)</td></tr>
+<tr><td>NVIDIA/TensorRT-LLM</td><td>14</td><td>NVIDIA inference optimizer</td></tr>
+<tr><td>huggingface/text-generation-inference</td><td>11</td><td>HF serving (TGI)</td></tr>
+<tr><td><b>LMCache/LMCache</b></td><td>9.0</td><td><b>KV-cache layer (offload / reuse)</b></td></tr>
+<tr><td><b>ai-dynamo/dynamo</b></td><td>7.3</td><td><b>NVIDIA datacenter inference framework</b></td></tr>
+<tr><td>kvcache-ai/Mooncake</td><td>5.6</td><td>KVCache-centric serving (Kimi); the agent-trace source</td></tr>
+<tr><td>SWE-bench/SWE-bench</td><td>5.2</td><td>the coding-agent benchmark (GRIT arm)</td></tr>
+<tr><td>llm-d/llm-d</td><td>3.4</td><td>K8s-native distributed inference</td></tr>
+<tr><td>sierra-research/tau-bench</td><td>1.3</td><td>tool-agent-user benchmark (τ²-bench family; GRIT arm)</td></tr>
+</tbody></table>
 
 <h2 id="s7">7. The GRIT project</h2>
 
@@ -240,17 +292,48 @@
 <h3>Honest status</h3>
 <p>Pre-data; the metric/trace contract is under active redesign and the design issues gate GPU spend. An external adversarial (Codex) review in June 2026 returned a provisional <i>reject</i> with one decisive risk: <b>no defensible counterfactual connecting lost reuse to cost-per-task</b>. That objection is now answered by the same-stream oracle-vs-bounded definition above — which converts the review&rsquo;s fatal point into the concrete thing the pilot must demonstrate. The window is closing (the field is converging on this seam); defensibility is the bundle + open reproducibility + the counterfactual primitive, not any single number.</p>
 
-<h2 id="s8">8. Open questions, the benchmark&harr;production gap, who to talk to</h2>
+<h2 id="s8">8. For the NVIDIA inference-PM role</h2>
+<p>This section reframes everything above for the <b>product</b> seat on an inference team. The technical fluency (§2–§6) is table stakes; this is the layer on top — what the product owns, who the competition is, and how a measurement like GRIT informs the roadmap. (GRIT is the <i>open</i> measurement paper; the productized version is the work side — the knowledge transfers directly, the artifacts stay separate.)</p>
+
+<h3>NVIDIA Dynamo in depth (the product you will reason about)</h3>
+<p><b>Dynamo</b> is NVIDIA&rsquo;s datacenter-scale, disaggregated inference-serving framework. The agent-relevant pieces:</p>
+<ul>
+<li><b>KV-aware router</b> — a global KV-block index + overlap-score placement: send a request to the replica that already holds the most of its prefix. Reports 85–97% Claude-Code cache hit <i>under its own routing</i> (realized, not infinite-cache &ldquo;available&rdquo;).</li>
+<li><b>Agent hints</b> — <code>nvext.agent_hints</code> = {priority, osl (output-seq-length), speculative_prefill} + <code>cache_control {ephemeral, ttl}</code>: the <b>declared</b> side of the seam, already shipping (this is what pre-empts a &ldquo;propose a hint spec&rdquo; paper).</li>
+<li><b>Disaggregated prefill/decode</b> + a distributed KV pool (the Mooncake / LMCache lineage).</li>
+<li><b>Roadmap signal:</b> an <i>Agent Trajectory Interchange Format</i> + in-tree agentic trace-replay (v1.2–1.3) — NVIDIA is productizing exactly the trace/replay tooling GRIT builds as an open artifact. Watch closely: it is both validation and competition for C3.</li>
+</ul>
+
+<h3>What an inference-team PM actually owns</h3>
+<ul>
+<li><b>Prioritization under the seam:</b> which agentic pains (the persona table, §4) are biggest <i>and</i> most monetizable — and whether to invest in the <b>declared</b> (hints) or <b>inferred</b> (engine-side) contract.</li>
+<li><b>Metering / observability as a product</b> (the &ldquo;C5 twin&rdquo;): per-tenant cost + locality attribution is a feature platform teams (your customers) are asking for; GRIT shows the methodology and the dollar value.</li>
+<li><b>Positioning vs. benchmarks:</b> AA-AgentPerf (agents/MW) and InferenceX ($/token) set the narrative; cost-per-<i>verified-task</i> is the missing, more customer-aligned frame.</li>
+<li><b>Open-source posture:</b> vLLM / SGLang / LMCache / llm-d are both the substrate and the competition; the moat is KV-aware routing + hints + trace/replay + hardware. (Star table, §6, shows where community energy sits.)</li>
+</ul>
+
+<h3>How GRIT&rsquo;s findings feed product decisions</h3>
+<ul>
+<li>The <b>value-of-awareness</b> number = the $ a customer saves from hints/routing &rarr; the ROI case for the declared contract.</li>
+<li>The <b>locality-tax curve</b> = the customer-facing story for &ldquo;why agents cost 5&times; chat&rdquo; and what Dynamo&rsquo;s routing recovers.</li>
+<li>The <b>per-tenant attribution</b> method = a candidate Dynamo observability feature.</li>
+<li>The <b>regime caveat</b> (the seam is minor when well-provisioned) tells you <i>which</i> customers the feature actually helps — bounded-cache, multi-tenant, long-horizon shops.</li>
+</ul>
+
+<div class="callout"><h4>Questions a PM on this team should be able to answer cold</h4>
+<p style="margin:4px 0">Explain prefill vs. decode and the memory wall (§2). Why does an agent stress the KV cache differently than chat (§3)? What is the orchestrator&harr;engine seam, and what does Dynamo ship to close it (§4, §8)? Goodput vs. cost-per-task — why does $/token mislead for agents (§7)? Who are the customers and what is each one&rsquo;s top pain (§4)? Where is the open-source competition and what is the moat (§6)? What would you measure to justify a routing-or-hints investment (§7, §8)?</p></div>
+
+<h2 id="s9">9. Open questions, the benchmark&harr;production gap, who to talk to</h2>
 <p><b>Harness/developer needs &amp; TTFT.</b> The locality gap <i>is</i> a time-to-first-token story: a surviving prefix-cache hit skips prefill (low TTFT); an evicted prefix recomputes (high TTFT + cost). GRIT should report TTFT + tail-TTFT as first-class outputs, and promote &ldquo;value of awareness&rdquo; (C4 re-scope) to a measured axis. Deployment friction proper (cold start, autoscaling) is out of scope (the C5 product twin).</p>
 <p><b>Benchmark&harr;production gap.</b> Benchmarks are curated single tasks with synthetic arrivals; production is concurrent, bursty, multi-tenant. C3 answers this, but GRIT inherits the agent-distribution gap by running on benchmarks. <b>Fix:</b> drive the chat co-tenant from a <i>real</i> trace (BurstGPT/Azure) and name the residual gap; optionally replay a real agent corpus for the cache half.</p>
 <p><b>Who to talk to (to understand agents in the wild).</b> Inside NVIDIA: the Dynamo PM/eng + customer teams (real agent serving workloads). Serving vendors: Together, Fireworks, Baseten, Anyscale, Modal. The harnesses themselves: Cursor, Cognition/Devin, All Hands/OpenHands, Replit, Sourcegraph/Amp, Windsurf. Orchestration: LangChain/LangGraph, CrewAI. Observability (aggregate in-the-wild telemetry): LangSmith, Braintrust, Arize, Helicone. Trace authors: Moonshot (Mooncake), the BurstGPT/Azure + KVCache-in-the-Wild authors. Full writeup: <code>docs/discovery-and-gaps.md</code>.</p>
 
-<h2 id="s9">9. Next actions · reading queue · unverified citations</h2>
+<h2 id="s10">10. Next actions · reading queue · unverified citations</h2>
 <p><b>Immediate:</b> (1) the co-design sync — settle the design issues (lead with the same-stream counterfactual, the trace fields, the cost-survivorship rule); confirm measurement is the lead; agree ownership + author order in writing. (2) Run the instrumentation + floor-rate <b>spike</b> before the full cell (it answers the circular &ldquo;settle-before-spend&rdquo; issues). (3) Then run the 1,200-trajectory pilot against the kill criteria. (4) Ingest BurstGPT/Azure as the real chat co-tenant. (5) Locate the vLLM&times;Mooncake primary URL.</p>
 <p class="small"><b>Reading queue (priority):</b> Cost-of-Pass (2504.13359) for the metric write-up; KVCache-in-the-Wild (2506.02634) + SAGA (2605.00528) as the closest pre-empts; Continuum/CacheTTL (2511.02230) + KVFlow (2507.07400) for the inferred/declared mechanisms; GoodServe (2605.16867) for the goodput dual; Agent Memory (2606.06448) + GAIATrace (2606.01725) for adjacent characterization/traces.</p>
 <div class="warnbox"><p style="margin:0"><b>Still unverified — do NOT cite until checked:</b> SideQuest (2602.22603); AutoLab (and its &ldquo;+0.43&rdquo; harness-ablation figure — do not quote); Inside the Scaffold; Self-Harness; lmcache-agent-trace; Agentix@NSDI. <b>Confirmed real since earlier drafts:</b> Agent Memory (2606.06448 <span class="ok">✓</span>), ThunderAgent (2602.13692 <span class="ok">✓</span>), GoodServe (2605.16867 <span class="ok">✓</span>), CONCUR (2601.22705 <span class="ok">✓</span>), GAIATrace (2606.01725 <span class="ok">✓</span>). Venue labels (ICLR&rsquo;26 for Cost-of-Pass, ICML&rsquo;26 for CONCUR, NSDI&rsquo;26 for ServeGen) are <i>as-claimed</i> and not confirmed accepted.</p></div>
 
-<div class="footer">GRIT — Master Brief · last updated 2026-06-14 17:13 PDT · internal / pre-publication · the live state is <code>STATUS.md</code>; the citation source of truth is <code>02-literature/sota-verified-2026.md</code></div>
+<div class="footer">GRIT — Master Brief · last updated 2026-06-14 17:22 PDT · internal / pre-publication · the live state is <code>STATUS.md</code>; the citation source of truth is <code>02-literature/sota-verified-2026.md</code></div>
 
 </body>
 </html>

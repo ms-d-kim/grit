@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>GRIT — Agentic Inference &amp; Serving · Annotated Working Brief</title>
+<title>GRIT — Agentic Inference &amp; Serving · Master Brief</title>
 <style>
   @page { size: Letter; margin: 0.8in 0.85in 0.7in 0.85in; }
   * { box-sizing: border-box; }
@@ -18,6 +18,7 @@
   code { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:8.6pt; background:#eef2f7; padding:0 3px; border-radius:3px; }
   .callout { background:#eaf1fb; border-left:4px solid #1f4e79; padding:9px 13px; margin:12px 0; border-radius:0 4px 4px 0; font-size:9.7pt; }
   .callout h3,.callout h4 { margin-top:0; color:#12365c; }
+  .warnbox { background:#fcf3e7; border-left:4px solid #b26a00; padding:9px 13px; margin:12px 0; border-radius:0 4px 4px 0; font-size:9.5pt; }
   .glossary { background:#f6f8fb; border:1px solid #d6dde6; border-radius:5px; padding:8px 13px; font-size:9.2pt; margin:12px 0; }
   .glossary dt { font-weight:700; color:#1f4e79; margin-top:5px; }
   .glossary dd { margin:0 0 2px 0; }
@@ -35,315 +36,221 @@
   th { background:#1f4e79; color:#fff; text-align:left; padding:5px 7px; }
   td { padding:4px 7px; border-bottom:1px solid #d6dde6; vertical-align:top; }
   tbody tr:nth-child(even){ background:#f1f5fa; }
+  .toc { columns:2; font-size:9.4pt; background:#f6f8fb; border:1px solid #d6dde6; border-radius:5px; padding:10px 16px; margin:12px 0; }
+  .toc a { color:#1f4e79; text-decoration:none; }
   .footer { margin-top:18px; border-top:1px solid #cfd8e3; padding-top:6px; color:#7a8694; font-size:8.2pt; text-align:center; }
 </style>
 </head>
 <body>
 
-<h1>GRIT &mdash; Annotated Working Brief</h1>
-<p class="deck"><b>Last updated: 2026-06-14 17:09 PDT</b> &middot; GRIT (GPU Reuse under Interleaved Traffic) &middot; a study-oriented edition with a plain-language summary of the key papers &middot; Target: MLSys 2027 Industry Track (~Oct 2026, provisional) &middot; public benchmarks + open infrastructure only</p>
+<h1>GRIT &mdash; Master Brief</h1>
+<p class="deck"><b>Last updated: 2026-06-14 17:13 PDT</b> &middot; GRIT (GPU Reuse under Interleaved Traffic) &middot; the single document to learn agents, the serving ecosystem, the literature, the tools, and this project &middot; Target: MLSys 2027 Industry Track (~Oct 2026, provisional) &middot; public benchmarks + open infrastructure only</p>
 
 <div class="callout">
 <h4>How to read this document</h4>
-<p style="margin:4px 0">This edition is written for someone <b>new to the area</b>. Technical terms are explained in parentheses the first time they appear and collected in the <b>Key terms</b> box below. We avoid internal shorthand: where earlier drafts wrote &ldquo;C1&rdquo; or &ldquo;H1,&rdquo; this version spells out the idea (e.g., &ldquo;the lead contribution&rdquo; or &ldquo;the interleaving hypothesis&rdquo;). Each paper gets a 1&ndash;2 paragraph summary covering <b>what it does</b>, <b>why it matters to the field</b>, and a highlighted <b>relevance to our project</b>.</p>
+<p style="margin:4px 0">This is the <b>master educational brief</b> for the project. It is written so a newcomer can learn the whole area from scratch: technical terms are explained in parentheses the first time they appear and collected in the <b>Key terms</b> box. It moves from <b>how inference works</b> &rarr; <b>what agents are</b> &rarr; <b>the ecosystem</b> &rarr; <b>the literature</b> (every verified paper, summarized) &rarr; <b>the tools</b> &rarr; <b>the GRIT project</b> &rarr; <b>open questions</b>. Citations marked <span class="ok">✓</span> are verified against the live ledger (<code>02-literature/sota-verified-2026.md</code>), which is the source of truth; anything unverified is quarantined in the box at the very end. <b>This brief is kept in sync with the repo and re-timestamped on every substantive change.</b></p>
 </div>
 
-<div class="glossary">
-<b>Key terms (used throughout)</b>
-<dl>
-<dt>LLM (large language model)</dt><dd>the neural network (e.g., Llama, Qwen, DeepSeek) that generates text token by token.</dd>
-<dt>Token</dt><dd>a chunk of text (roughly a word-piece) — the unit a model reads and emits.</dd>
-<dt>KV cache (key/value cache)</dt><dd>the model&rsquo;s stored &ldquo;attention&rdquo; state for every past token. Keeping it lets the model avoid recomputing the whole history at each step. It is the main consumer of GPU memory during generation.</dd>
-<dt>Prefill vs. decode</dt><dd>the two phases of inference. <i>Prefill</i> reads the whole prompt at once (limited by compute). <i>Decode</i> emits one token at a time, each step re-reading the KV cache (limited by memory bandwidth).</dd>
-<dt>TTFT / TPOT</dt><dd>time-to-first-token (how long until the first output appears) and time-per-output-token (the steady-state speed thereafter).</dd>
-<dt>Throughput vs. goodput</dt><dd>tokens/second served overall (throughput) vs. tokens/second that actually meet a latency target (goodput — the number that matters in production).</dd>
-<dt>Prefix caching</dt><dd>reusing the KV cache of a shared beginning (system prompt, tool definitions, conversation history) across requests, so it isn&rsquo;t recomputed — <i>if</i> it hasn&rsquo;t been evicted.</dd>
-<dt>Eviction</dt><dd>when GPU memory fills, the server discards some cached KV to make room; discarded context must be recomputed if needed again.</dd>
-<dt>Agent / the agent loop</dt><dd>an LLM used in a loop: think &rarr; call a tool (search, code execution, etc.) &rarr; read the result &rarr; think again, for many steps, until a task is done.</dd>
-<dt>Orchestrator vs. serving engine</dt><dd>the <i>orchestrator</i> (e.g., LangGraph) decides the agent&rsquo;s next step; the <i>serving engine</i> (e.g., vLLM) actually runs the model. They are separate systems that don&rsquo;t share state.</dd>
-<dt>Harness / scaffold</dt><dd>the code around the model that turns it into an agent (the prompts, tool wiring, retry logic). The same model scores very differently under different harnesses.</dd>
-<dt>Horizon</dt><dd>how many steps an agent is allowed to take on a task.</dd>
-<dt>Tenancy / interleaving</dt><dd>multiple workloads (e.g., chat and agents) sharing one server, so their requests are mixed together and compete for the same cache.</dd>
-<dt>The locality gap</dt><dd>our central quantity: the difference between how much cached context <i>could</i> be reused (with unlimited memory) and how much actually <i>is</i> reused (under real, bounded, shared memory).</dd>
-<dt>Cost of Grit (the headline metric)</dt><dd>the resource cost (GPU-seconds, dollars, or energy) of an agent&rsquo;s work, charged against successful outcomes and counting the cost of failed attempts — capturing what an agent&rsquo;s &ldquo;keep trying&rdquo; actually costs. The <i>exact denominator</i> — per verified iteration vs. per completed task, and how failures are counted — is still an open design decision (see §5).</dd>
-</dl>
+<div class="toc">
+<b>Contents</b><br>
+1. Executive summary — what GRIT is<br>
+2. How LLM inference works (the mental model)<br>
+3. What an agent is, and why it stresses serving differently<br>
+4. The ecosystem and the orchestrator&harr;engine seam<br>
+5. The literature, annotated (foundations &rarr; frontier)<br>
+6. The tools you will actually use<br>
+7. The GRIT project — problem, metric, pilot, threats, status<br>
+8. Open questions, the benchmark&harr;production gap, who to talk to<br>
+9. Next actions · reading queue · unverified citations
 </div>
 
-<h2>1. What we are trying to do</h2>
-<p class="lede">This is a <b>measurement</b> paper, not a new system or technique. A chatbot answers one prompt and forgets it; an <b>agent</b> runs a long loop (think &rarr; use a tool &rarr; think again) whose memory grows the whole time and is re-read on every step. The server tries to keep that memory in a fast cache (the KV cache), but cache space is scarce and shared with other traffic, so much of it gets evicted and must be recomputed. We measure, on <b>open infrastructure</b> (freely available serving software) and <b>public benchmarks</b> (openly available task sets), <b>how much reuse is lost</b> under realistic mixed traffic and <b>what that loss costs per unit of useful work</b>.</p>
-<p>Two deliverables:</p>
+<h2 id="s1">1. Executive summary — what GRIT is</h2>
+<p><b>GRIT (GPU Reuse under Interleaved Traffic)</b> is a <b>measurement-and-characterization</b> study — not a new system, scheduler, or kernel. It asks a single question: <i>when chat and agents share one serving engine, how much of an agent&rsquo;s cache reuse actually survives, and what does the lost reuse cost per task the agent completes?</i></p>
+<p>An <b>agent</b> is a stateful loop (model &rarr; tool &rarr; model &rarr; …) whose context grows monotonically and which re-enters the model many times against a mostly-shared prefix. Prefix caching <i>should</i> make each re-entry nearly free — <b>if the cached prefix survives to the next step</b>. Whether it does, under realistic <i>mixed</i> traffic on a <i>bounded</i> cache, is contested in the 2026 literature, and that disagreement is the opening.</p>
+<p>GRIT quantifies the <b>locality gap</b> (how far <i>realized</i> reuse falls below <i>available</i> reuse), isolates how much of the drop is caused by <b>multi-tenant interleaving</b> vs. the agent&rsquo;s own context churn, and prices it as the <b>&ldquo;Cost of Grit&rdquo;</b> — cost per <i>verified task</i>, on open infrastructure (vLLM/SGLang) with public benchmarks (SWE-bench Verified, &tau;&sup2;-bench). It ships two things: <b>C1</b>, the measurement (the locality-tax curve), and <b>C3</b>, a released mixed, cost-labeled, OpenTelemetry-format serving trace + harness. <b>Discipline: measurement, not mechanism</b> — the mechanism space (eviction/TTL/sharing/scheduling) is crowded and well-funded; defensibility is the <i>bundle</i> (open infra + mixed traffic + interleaving isolated + cost tied to verified work + the released trace), anchored by a defensible causal primitive (§7).</p>
+<p class="note">Status: pre-data. The harness is a scaffold; a set of design issues gate GPU spend (§7). The headline metric was sharpened in June 2026 from a vague &ldquo;share of the gap&rdquo; into a same-stream counterfactual after an adversarial review — see §7.</p>
+
+<h2 id="s2">2. How LLM inference works (the mental model)</h2>
+<p>You cannot reason about agent serving without the inference roofline. Read this section once; everything later hangs off it.</p>
+
+<h3>Two regimes: prefill vs. decode</h3>
+<p>Generating from a transformer has two phases. <b>Prefill</b> reads the prompt and is <b>compute-bound</b> (lots of matrix math, high arithmetic intensity). <b>Decode</b> generates output one token at a time and is <b>memory-bandwidth-bound</b> (each step mostly reloads weights + the KV cache from GPU memory). The single most important consequence: in decode, a forward pass over K tokens costs about the same as over 1 — which is why batching and speculative decoding help, and why <b>the memory wall</b>, not FLOPs, sets decode wall-clock.</p>
+
+<h3>The KV cache — the resource this whole project is about</h3>
+<p>Attention lets each token attend to all previous tokens; to avoid recomputing that history every step, the model stores the per-token <b>key/value</b> tensors — the <b>KV cache</b>. It is large, it lives in scarce GPU memory (HBM), and it is the central managed resource of a serving engine. Everything in the literature is either (a) moving work across the compute/bandwidth line or (b) managing the KV cache — its <b>size</b> (MQA/GQA/MLA, quantization), <b>reuse</b> (prefix/radix/prompt caching), <b>eviction</b> (LRU, H2O, TTL), or <b>placement</b> (offload, disaggregation).</p>
+
+<h3>Prefix caching — the lever that makes multi-turn cheap</h3>
+<p><b>Prefix caching</b> reuses the KV of a shared prefix (system prompt, tool definitions, conversation/agent history) across requests or turns, so the shared part is not re-prefilled. <b>RadixAttention</b> (SGLang) generalizes this with a radix tree that shares prefixes <i>by content</i> across all in-flight requests. This is exactly the lever an agent loop depends on — <i>unless the prefix is evicted before the next step</i>. GRIT measures how often that &ldquo;unless&rdquo; bites.</p>
+
+<h3>Batching, goodput, and disaggregation</h3>
 <ul>
-<li><b>The lead contribution — the &ldquo;Cost of Grit&rdquo; curve.</b> We quantify the gap between available and realized cache reuse (the locality gap) and express it as the cost per unit of <i>verified</i> work (the precise denominator — per verified iteration vs. per completed task, counting failed-attempt cost — is an open design choice settled in §5), as a function of how long the agent runs, what caching policy the server uses, and how heavily the server is shared.</li>
-<li><b>The artifact contribution — a public dataset + tooling.</b> We release a recorded stream of mixed chat-and-agent traffic with cost labels, in a standard tracing format, plus the software that collected it. No comparable public dataset exists.</li>
-</ul>
-<p class="note">(Internally these are labelled C1 and C3; the full candidate list and the hypotheses are spelled out in plain language in sections 4&ndash;6, with their internal labels noted once for cross-reference.)</p>
-<p><b>Why this is defensible.</b> The space of <i>mechanisms</i> (clever cache or scheduling tricks) is extremely crowded — many well-funded teams are building them. Far fewer are doing a careful, reproducible <i>measurement</i> of what the problem is actually worth, in the open, tied to real task success. That measurement — the bundle of rigor, breadth, open reproducibility, and the released dataset — is the contribution.</p>
-
-<h2>2. Where we stand</h2>
-<p>The verified core citation ledger is current and fact-checked against live search (the project enforces a strict rule: no citation is used without verification, because earlier drafts contained invented references); a few references remain unresolved and the prose-synthesis documents are not yet written. The framing has settled from an earlier &ldquo;find the best recipe&rdquo; goal onto the measurement goal above. The competitive landscape — including very recent industry results (NVIDIA&rsquo;s Dynamo serving stack and Artificial Analysis&rsquo;s AA-AgentPerf benchmark, both summarized in section 8) — has been verified and folded in.</p>
-<p>The experiment (&ldquo;the pilot&rdquo;) is designed, but two independent critical reviews surfaced <b>nine design problems that must be fixed before spending money on GPUs</b> (detailed in section 5) — for example, the core metric is currently defined two inconsistent ways, and the data format cannot yet capture everything needed to compute it. The next concrete step is a co-design meeting with the collaborator who owns the server-internals work, to settle those, then run a small (~$300, ~1 week) pilot that will either confirm the effect or kill the idea quickly.</p>
-<p><b>Honest assessment:</b> the field is moving fast and the opening is narrowing — mechanism papers are already crowded out, and even individual measurements are adjacent to published work. What remains genuinely open is the specific intersection we target: the locality gap under realistic <i>mixed</i> traffic on open infrastructure, tied to verified work, released as a public dataset.</p>
-
-<h2>3. The contributions, in full</h2>
-<table>
-<thead><tr><th style="width:30%">Contribution</th><th>What it is &amp; current standing</th></tr></thead>
-<tbody>
-<tr><td><b>Cost-of-Grit curve</b> <span class="meta">(lead; internally C1)</span></td><td>Cost/latency per <i>verified</i> agent iteration vs. run length, caching policy, and degree of sharing, on open serving software. The &ldquo;missing meter&rdquo; that both serving teams and agent builders would act on. <b>Status:</b> pilot pending the redesign in section 6.</td></tr>
-<tr><td><b>Public mixed-traffic trace + harness</b> <span class="meta">(artifact; internally C3)</span></td><td>A released recording of interleaved chat+agent traffic with cost labels and cross-layer timing, plus the collection tool. <b>Status:</b> bundled with the lead contribution.</td></tr>
-<tr><td><b>Cache-aware context-edit policy</b> <span class="meta">(secondary; internally C2)</span></td><td>Treating edits to an agent&rsquo;s context as cost/quality decisions. <b>Status:</b> watching; a natural follow-on paper.</td></tr>
-<tr><td><b>Hint interface</b> <span class="meta">(internally C4)</span></td><td>A way for the agent layer to tell the server what to keep/expect. <b>Status:</b> <span class="warn">largely pre-empted</span> — NVIDIA&rsquo;s Dynamo already ships exactly this (see section 7); re-scope to measuring the value of the existing hints, or drop.</td></tr>
-<tr><td><b>Iteration-economics metering</b> <span class="meta">(internally C5)</span></td><td>The product-shaped twin of the lead idea; out of scope for this paper.</td></tr>
-<tr><td><b>Harness-conditional benchmarking</b> <span class="meta">(internally C6)</span></td><td>Quantifying how much a result depends on the harness vs. the model. <b>Status:</b> background; possible workshop paper.</td></tr>
-</tbody>
-</table>
-<p class="small"><b>Already ruled out (the &ldquo;graveyard&rdquo;):</b> a generic cache/eviction <i>mechanism</i> paper (too crowded); a naive &ldquo;agents differ from chat&rdquo; characterization (already common knowledge); &ldquo;the first public agent trace&rdquo; as a headline (eroded — survives only in the narrowed, cost-labeled, mixed-traffic form above).</p>
-
-<h2>4. The hypotheses (plain language)</h2>
-<p>Each is a falsifiable claim with a stated &ldquo;kill criterion&rdquo; (the result that would make us abandon it). Internal labels in brackets are for cross-reference only.</p>
-<ul>
-<li><b>The interleaving hypothesis [H1].</b> When chat and agent traffic share one server with limited cache memory, the agent&rsquo;s realized cache reuse falls well below what would be available in isolation, and a measurable part of that drop is caused specifically by the <i>mixing</i> of workloads (eviction from competing traffic), as opposed to the agent simply changing its own context. <i>Kill it if</i> reuse already collapses even when the agent runs alone (then the story is about the agent, not about sharing).</li>
-<li><b>The super-linear cost hypothesis [H2].</b> Cost per verified iteration grows <i>faster than linearly</i> as the agent runs longer, and the shape depends on the caching policy — a structure that a simple &ldquo;dollars per token&rdquo; figure hides. <i>Kill it if</i> the curve is straight and policy doesn&rsquo;t matter.</li>
-<li><b>The phase-structure hypothesis [H3].</b> The pauses while an agent waits for tools are not random; they follow a read-then-write rhythm, so a simple &ldquo;evict the least-recently-used&rdquo; policy throws away exactly the wrong cache at the wrong moment, and a phase-aware policy would recover much of the loss (shown in simulation, not built). <i>Kill it if</i> the pause timing is effectively random.</li>
-<li><b>The reproducible-artifact hypothesis [H4].</b> A small released dataset + tool is enough for others to reproduce the two results above. <i>Kill it if</i> a comparable public dataset ships first.</li>
+<li><b>Continuous (iteration-level) batching</b> (Orca) interleaves requests at the token step, not the request boundary — the basis of modern throughput.</li>
+<li><b>Goodput</b> (not raw throughput) is the SLO-meeting metric: useful work per second that actually meets latency targets. GRIT&rsquo;s cost-per-verified-task is the <i>economic dual</i> of goodput (useful work per <i>resource</i>, not per second).</li>
+<li><b>Prefill/decode disaggregation</b> (DistServe, Splitwise, Mooncake) splits the two phases onto different GPUs because colocating compute-bound prefill with bandwidth-bound decode causes mutual slowdown. Agent loops re-trigger prefill constantly, so this tension is central to the workload.</li>
 </ul>
 
-<h2>5. The pilot experiment, the metric definitions, and what to fix first</h2>
-<p>The first experiment is deliberately small and designed to fail fast: run an agent (using <b>ReAct</b>, the standard reason-then-act loop — see section 7) on a public tool-use benchmark, once with the server to itself and once sharing it 50/50 with chat traffic, under two caching policies, across 50 tasks &times; 3 repeats = 600 runs on a single GPU configuration (~1 week, under $300). The readouts are the available-vs-realized reuse gap, the cost per verified iteration, and the distribution of tool-wait times.</p>
-<p><b>Metric definitions (corrected).</b> <i>Available reuse</i> = the fraction of input that could be reused with unlimited cache (computed offline by replay). <i>Realized reuse</i> = the fraction actually reused under the real, bounded cache. <i>The locality gap</i> = available minus realized, both measured against the <b>same total</b>, so it stays between 0 and 1. <i>Cost per verified task</i> = total cost (including the cost of failed attempts) per task that succeeded — reported as a curve over run length, to avoid flattering the result by ignoring expensive failures. <i>Tool-wait time</i> is the time the agent spends waiting on a tool; note that this is <b>not</b> the same as GPU idle time, because under shared traffic the GPU serves other requests during that wait.</p>
-<div class="callout">
-<h4>Nine design issues to settle before spending GPU budget (from two critical reviews)</h4>
-<ol class="small" style="margin:4px 0 0">
-<li><b>The core metric is defined two ways.</b> The written definition (available minus realized, same denominator) and the code (which divides by reusable tokens and can go negative) disagree. Pick one; make code and docs match; enforce the 0&ndash;1 range.</li>
-<li><b>The data format can&rsquo;t yet compute the answer.</b> It records token <i>counts</i> but not which tokens, the global ordering/timestamps, or which cache entries were evicted and why — all needed to replay &ldquo;what could have been reused&rdquo; and to prove the mixing effect. Add those fields. (The same gap means calling it a standards-format trace is premature.)</li>
-<li><b>Sharing and load are tangled together.</b> Comparing &ldquo;alone&rdquo; vs. &ldquo;50/50 mixed&rdquo; changes <i>both</i> the mix and the total load. Hold the agent&rsquo;s own work fixed and add chat as a rate-matched background so the effect is attributable to mixing.</li>
-<li><b>The cache size isn&rsquo;t set.</b> The very thing that forces eviction (a bounded cache budget) is left unspecified in the configuration. Make it an explicit knob and test more than one setting.</li>
-<li><b>The cost metric has a survivorship bias.</b> Counting cost only on successes drops the expensive long runs that failed — exactly where the &ldquo;cost of grit&rdquo; lives. Count cost across all attempts, per successful task.</li>
-<li><b>Tool-wait time is being mistaken for GPU idle time.</b> Under shared traffic these differ; measuring idle time needs a server-wide utilization timeline.</li>
-<li><b>The runner doesn&rsquo;t produce the stated design.</b> The current loop ignores repeats and run-length and would yield 4 cells, not 600, and reports one global average instead of broken-out, paired results with error bars.</li>
-<li><b>Mixed-tenant cost attribution &amp; attempt structure are undefined.</b> The cost field is one number per task, with no rule for splitting shared GPU / tool / idle / chat cost and no way to represent failed attempts before a success — which cost-per-verified-task needs. Add an attempt/retry record + an accounting window + a pre-registered attribution rule.</li>
-<li><b>No experimental-hygiene controls.</b> No cache warmup/flush, process isolation, teardown, or cell-order randomization; cells run in fixed order and engine handles are never closed, so carryover/order effects would confound the result. Add them.</li>
-</ol>
-<p class="small" style="margin:6px 0 0"><b>Settle #1, #2, and #5 first</b> — they decide whether the headline number means anything.</p>
-</div>
+<div class="callout"><h4>The five things to be able to explain</h4>
+<p style="margin:4px 0">(1) the roofline / arithmetic intensity; (2) the memory wall in decode; (3) goodput vs throughput; (4) prefill/decode interference; (5) &ldquo;everything is the KV cache&rdquo; — size, reuse, eviction, precision, placement. If you can place a technique on the roofline and say which KV property it touches, you understand it.</p></div>
 
-<h2>6. Annotated literature, part I — how inference works (the foundations)</h2>
-<p class="note">These are the load-bearing systems papers the project sits on top of. The single organizing idea: generation has two regimes — reading the prompt is compute-limited, writing each token is memory-bandwidth-limited — and almost every technique below either moves work across that line or manages the KV cache (its size, reuse, eviction, precision, or placement).</p>
-
-<h3>The model and the attention bottleneck</h3>
-<div class="paper">
-<p class="ptitle">Attention Is All You Need <span class="meta">— Vaswani et al., NeurIPS 2017 · arXiv 1706.03762 <span class="ok">✓</span></span></p>
-<p>Introduced the Transformer, the architecture behind essentially all modern LLMs. Its core operation, <b>self-attention</b> (each token looking at every previous token to decide what matters), is what makes the models powerful — and is also the source of the serving cost, because every past token&rsquo;s key/value vectors must be kept around (the KV cache) and re-read on each new token.</p>
-<p class="rel"><b>Why it matters to us:</b> it defines the resource our whole project is about. The KV cache exists because of attention; the locality gap is a statement about how well that cache is managed.</p>
-</div>
-<div class="paper">
-<p class="ptitle">Efficiently Scaling Transformer Inference <span class="meta">— Pope et al., MLSys 2023 · arXiv 2211.05102 <span class="ok">✓</span></span></p>
-<p>The clearest analytical account of <i>why</i> inference behaves the way it does: it lays out the &ldquo;roofline&rdquo; (a model of when you are limited by compute vs. by memory bandwidth), shows that reading the prompt is compute-bound while generating tokens is bandwidth-bound, and explains how batching and certain attention variants change the picture. Read first to build intuition.</p>
-<p class="rel"><b>Why it matters to us:</b> it is the mental model behind every measurement we make — if you can&rsquo;t place an effect on the compute-vs-bandwidth picture, you don&rsquo;t yet understand it.</p>
-</div>
-<div class="paper">
-<p class="ptitle">FlashAttention (and -2, -3) <span class="meta">— Dao et al., NeurIPS 2022 / later · arXiv 2205.14135, 2307.08691, 2407.08608 <span class="ok">✓</span></span></p>
-<p>A way to compute exact attention without ever writing the huge intermediate score matrix to slow memory — by processing it in tiles that stay in fast on-chip memory. This gave large speedups and made long contexts practical; versions 2 and 3 push it further on newer GPUs. It is now the default attention implementation everywhere.</p>
-<p class="rel"><b>Why it matters to us:</b> it&rsquo;s a baseline assumption of any modern server we measure; long agent contexts are only feasible because of it.</p>
-</div>
-<div class="paper">
-<p class="ptitle">Multi-Query and Grouped-Query Attention <span class="meta">— Shazeer 2019 / Ainslie et al. 2023 · arXiv 1911.02150, 2305.13245 <span class="ok">✓</span></span></p>
-<p>Two architectural tricks that shrink the KV cache by letting many &ldquo;query heads&rdquo; share a smaller number of key/value heads. Multi-Query is the aggressive version (one shared set); Grouped-Query is the now-standard middle ground used by most modern open models. Smaller KV per token means more requests fit in memory.</p>
-<p class="rel"><b>Why it matters to us:</b> they set how much KV each token costs, which directly affects how soon a shared cache fills and starts evicting — the pressure our interleaving hypothesis is about.</p>
-</div>
-
-<h3>Serving engines, batching, and prefix reuse</h3>
-<div class="paper">
-<p class="ptitle">Orca: continuous (iteration-level) batching <span class="meta">— Yu et al., OSDI 2022 <span class="ok">✓</span></span></p>
-<p>Before Orca, a server batched requests together and made them all wait for the slowest to finish. Orca introduced <b>continuous batching</b>: requests can join and leave the batch at every single token step, so finished requests free their slot immediately and new ones start without delay. This was the single biggest throughput improvement in LLM serving and is now assumed baseline behavior.</p>
-<p class="rel"><b>Why it matters to us:</b> it is the scheduling baseline our experiments run on; how it interleaves chat and agent requests is part of what creates (or hides) the locality gap.</p>
-</div>
-<div class="paper">
-<p class="ptitle">PagedAttention / vLLM <span class="meta">— Kwon et al., SOSP 2023 · arXiv 2309.06180 <span class="ok">✓</span></span></p>
-<p>vLLM is the de-facto open-source serving engine; its key idea, <b>PagedAttention</b>, manages the KV cache like an operating system manages memory — in fixed-size blocks (&ldquo;pages&rdquo;) that can be allocated and shared flexibly instead of as one contiguous chunk. This eliminated the memory waste (fragmentation) that previously limited how many requests could run at once, and it enables prefix sharing across requests.</p>
-<p class="rel"><b>Why it matters to us:</b> it is one of the two engines we measure on, and its paging/eviction behavior is precisely the machinery whose realized vs. available reuse we are quantifying.</p>
-</div>
-<div class="paper">
-<p class="ptitle">Sarathi-Serve: chunked prefill <span class="meta">— Agrawal et al., OSDI 2024 · arXiv 2403.02310 <span class="ok">✓</span></span></p>
-<p>Reading a long prompt (prefill) is compute-heavy and, if done all at once, stalls the steady stream of token generation (decode) for other users. <b>Chunked prefill</b> breaks a long prompt into pieces and interleaves them with ongoing decoding, so one user&rsquo;s big prompt doesn&rsquo;t freeze everyone else — trading a little first-token latency for much steadier overall service.</p>
-<p class="rel"><b>Why it matters to us:</b> agents re-trigger prefill constantly (every loop step re-reads a grown context), so how the engine chunks and schedules prefill directly shapes agent cost and latency.</p>
-</div>
-<div class="paper">
-<p class="ptitle">SGLang / RadixAttention <span class="meta">— Zheng et al., NeurIPS 2024 · arXiv 2312.07104 <span class="ok">✓</span></span></p>
-<p>SGLang is the other major open serving engine. Its key idea, <b>RadixAttention</b>, stores cached prefixes in a radix tree (a tree keyed by shared text prefixes) so that <i>any</i> requests sharing a beginning — system prompts, few-shot examples, conversation history, branching agent states — automatically reuse each other&rsquo;s KV cache, not just exact repeats. It also speeds up structured (e.g., JSON) outputs.</p>
-<p class="rel"><b>Why it matters to us:</b> the most directly relevant prior system — the strongest realized-reuse case, and one of our two engines. (The &ldquo;available reuse&rdquo; ceiling itself comes from our offline infinite-cache replay, not from SGLang.)</p>
-</div>
-<div class="paper">
-<p class="ptitle">AlpaServe <span class="meta">— Li et al., OSDI 2023 · arXiv 2302.11665 <span class="ok">✓</span></span></p>
-<p>Shows how to place and share multiple models across GPUs to handle bursty, unpredictable demand efficiently (statistical multiplexing) using model parallelism. Less central to single-model agent serving, but part of the canon on serving under variable load.</p>
-<p class="rel"><b>Why it matters to us:</b> background for the &ldquo;mixed, bursty traffic&rdquo; conditions our interleaving hypothesis assumes.</p>
-</div>
-
-<h3>Splitting the two phases apart (disaggregation)</h3>
-<div class="paper">
-<p class="ptitle">DistServe / Splitwise / Mooncake <span class="meta">— OSDI 2024 / ISCA 2024 / 2024 · arXiv 2401.09670, 2311.18677, 2407.00079 <span class="ok">✓</span></span></p>
-<p>A family of systems built on one insight: the compute-bound prefill phase and the bandwidth-bound decode phase fight each other when run on the same GPU, so <b>disaggregation</b> runs them on separate hardware tuned for each. <b>DistServe</b> establishes the idea for latency targets; <b>Splitwise</b> splits across cheaper/greener machine types; <b>Mooncake</b> (the stack behind the Kimi assistant) builds the whole serving system around the KV cache as the central object, including moving it across machines.</p>
-<p class="rel"><b>Why it matters to us:</b> disaggregation is fundamentally about meeting latency targets efficiently — the same goal as our cost-per-verified-iteration. Agent loops re-trigger prefill constantly, making the prefill/decode tension (and where the KV lives) central to our workload.</p>
-</div>
-
-<h3>Managing the KV cache: compression, eviction, reuse</h3>
-<div class="paper">
-<p class="ptitle">Prompt Cache <span class="meta">— Gim et al., MLSys 2024 · arXiv 2311.04934 <span class="ok">✓</span></span></p>
-<p>Precomputes and reuses the KV cache of reusable text snippets (e.g., a long document or instruction block) across requests in a modular way, even when they appear at different positions — a more general form of prefix reuse.</p>
-<p class="rel"><b>Why it matters to us:</b> another point on the &ldquo;how much can be reused&rdquo; spectrum that defines our available-reuse ceiling.</p>
-</div>
-<div class="paper">
-<p class="ptitle">StreamingLLM (attention sinks) &amp; H2O (heavy-hitter eviction) <span class="meta">— Xiao et al., ICLR 2024 / Zhang et al., NeurIPS 2023 · arXiv 2309.17453, 2306.14048 <span class="ok">✓</span></span></p>
-<p>Two influential ways to <i>drop</i> KV when memory is tight while keeping quality. <b>StreamingLLM</b> found that keeping a few initial &ldquo;sink&rdquo; tokens plus a recent window is enough for stable infinite-length streaming. <b>H2O</b> keeps the tokens that have historically received the most attention (&ldquo;heavy hitters&rdquo;) and evicts the rest.</p>
-<p class="rel"><b>Why it matters to us:</b> representative eviction heuristics. Our pilot specifically tests LRU and retain-during-tool (not these two), but the phase-structure hypothesis argues such static heuristics evict at the wrong moments for agents.</p>
-</div>
-<div class="paper">
-<p class="ptitle">KIVI <span class="meta">— Liu et al., 2024 · arXiv 2402.02750 <span class="ok">✓</span></span></p>
-<p>Compresses the KV cache by storing it at very low precision (2-bit) without retraining, roughly quadrupling how much context fits in memory at a small quality cost.</p>
-<p class="rel"><b>Why it matters to us:</b> a different lever (precision, not eviction) on the same scarce resource; relevant as a knob that changes effective cache size.</p>
-</div>
-<div class="paper">
-<p class="ptitle">FlashMemory-DeepSeek-V4 / Lookahead Sparse Attention <span class="meta">— Tencent et al., 2026 · arXiv 2606.09079 <span class="ok">✓</span> · preliminary/suspended</span></p>
-<p>A recent, learned approach to KV management: a small &ldquo;Neural Memory Indexer&rdquo; periodically <b>predicts which cached chunks the model will actually need next</b> and keeps only those, shrinking the cache to ~13.5% of full size while holding accuracy. Notably, the predictor is trained on its own (as a retrieval model) without loading the huge backbone model. It is built into the DeepSeek-V4 architecture and is an early, now-suspended project, so its numbers are preliminary.</p>
-<p class="rel"><b>Why it matters to us:</b> it is a <i>learned cousin</i> of our phase-structure hypothesis (predicting which KV matters), which both validates the premise and confirms the mechanism is being actively pursued — pushing us toward measuring the gap rather than building the predictor. Important distinction: this works <i>within a single long request</i>; our project is about <i>across</i> mixed requests on a shared cache, so it does not pre-empt the lead measurement.</p>
-</div>
-
-<h3>Spreading work across GPUs, and shrinking the model (background)</h3>
-<div class="paper">
-<p class="ptitle">Parallelism: Megatron-LM, GPipe, ZeRO, Ring Attention <span class="meta">— arXiv 1909.08053, 1811.06965, 1910.02054, 2310.01889 <span class="ok">✓</span></span></p>
-<p>The standard ways to split a model or its work across many GPUs: <b>tensor parallelism</b> (Megatron — split each layer&rsquo;s math), <b>pipeline parallelism</b> (GPipe — split the layers into stages), <b>sharding</b> (ZeRO — split the model&rsquo;s parameters/optimizer state, the basis of today&rsquo;s FSDP training), and <b>sequence/context parallelism</b> (Ring Attention — split a very long input across GPUs). These come from the training world but the concepts carry over to inference.</p>
-<p class="rel"><b>Why it matters to us:</b> context for how large models are actually served; we hold these fixed and don&rsquo;t vary them, but they bound the hardware setting.</p>
-</div>
-<div class="paper">
-<p class="ptitle">Quantization: LLM.int8(), GPTQ, SmoothQuant, AWQ <span class="meta">— arXiv 2208.07339, 2210.17323, 2211.10438, 2306.00978 <span class="ok">✓</span></span></p>
-<p>Techniques to run models in lower numerical precision (8-bit or 4-bit) to save memory and increase speed, while preserving accuracy — differing in how they handle the rare large values that make naive quantization fail. AWQ and GPTQ are the common open-weight choices.</p>
-<p class="rel"><b>Why it matters to us:</b> our chosen model is served quantized to fit one GPU; quantization is part of the fixed setup, and it changes how much memory is left for the KV cache.</p>
-</div>
-<div class="paper">
-<p class="ptitle">Speculative decoding: Leviathan/Chen, Medusa, EAGLE, Lookahead <span class="meta">— arXiv 2211.17192, 2302.01318, 2401.10774, 2401.15077, 2402.02057 <span class="ok">✓</span></span></p>
-<p>A family of speedups that let a model generate several tokens per step instead of one: a cheap &ldquo;draft&rdquo; proposes multiple tokens and the real model verifies them in a single pass, accepting the correct prefix. <b>Medusa</b> and <b>EAGLE</b> avoid a separate draft model by adding lightweight prediction heads; <b>Lookahead</b> needs no draft at all. It works because verifying K tokens costs about the same as generating one (the memory wall).</p>
-<p class="rel"><b>Why it matters to us:</b> a serving knob that changes per-token cost and latency; relevant as a potential confound to control for, and as part of the cost model.</p>
-</div>
-
-<h2>7. Annotated literature, part II — agents, harnesses, and orchestration</h2>
-<div class="paper">
-<p class="ptitle">ReAct <span class="meta">— Yao et al., ICLR 2023 · arXiv 2210.03629 <span class="ok">✓</span></span></p>
-<p>The foundational agent pattern: interleave <b>rea</b>soning (the model thinking out loud) with <b>act</b>ions (calling tools and observing results), in a loop. Almost every coding/tool agent today is a descendant of this. It is the reason an agent&rsquo;s context grows step by step and is re-read repeatedly — the behavior that stresses the cache.</p>
-<p class="rel"><b>Why it matters to us:</b> it is the exact agent loop our pilot runs; the &ldquo;think &rarr; tool &rarr; think&rdquo; structure is what produces the tool-wait pauses and the growing shared prefix we measure.</p>
-</div>
-<div class="paper">
-<p class="ptitle">Reflexion, Toolformer, ReWOO, Tree of Thoughts <span class="meta">— arXiv 2303.11366, 2302.04761, 2305.18323, 2305.10601 <span class="ok">✓</span></span></p>
-<p>Variations on the agent loop. <b>Reflexion</b> has the agent critique its own failed attempts and remember the lessons. <b>Toolformer</b> teaches a model when to call tools. <b>ReWOO</b> separates planning the whole tool-use plan up front from executing it (reducing back-and-forth). <b>Tree of Thoughts</b> explores multiple reasoning branches instead of one. Each changes the shape of the context and the number of steps.</p>
-<p class="rel"><b>Why it matters to us:</b> they define the space of agent behaviors whose serving cost differs; ReWOO&rsquo;s plan-then-execute, for example, creates a different reuse pattern than ReAct, a natural axis to expand into after the pilot.</p>
-</div>
-<div class="paper">
-<p class="ptitle">Model Context Protocol (MCP) <span class="meta">— Anthropic, late 2024 · open standard <span class="ok">✓</span></span></p>
-<p>An emerging open standard for how agents connect to tools and data sources (a common &ldquo;plug&rdquo; so any agent can use any compliant tool). It is rapidly becoming the default integration layer for agentic systems.</p>
-<p class="rel"><b>Why it matters to us:</b> it standardizes the tool calls that create the pauses in the agent loop; it&rsquo;s the interface layer where &ldquo;the orchestrator and the server don&rsquo;t share state&rdquo; — the gap our framing centers on.</p>
-</div>
-<div class="paper">
-<p class="ptitle">Orchestration frameworks &amp; the harness concept <span class="meta">— LangGraph, CrewAI, OpenAI Agents SDK (systems, not papers)</span></p>
-<p>The <b>orchestrator</b> is the software that drives the agent loop — deciding the next step, managing memory, calling tools. It is separate from the <b>serving engine</b> that runs the model, and the two don&rsquo;t share internal state. The <b>harness</b> (or scaffold) is this surrounding code; crucially, the <i>same</i> model can score very differently depending on its harness (&ldquo;home-field advantage&rdquo;), which is a major source of unfair comparisons in agent evaluation.</p>
-<p class="rel"><b>Why it matters to us:</b> the orchestrator/server split is the root cause we study — because neither side sees the other, the server must <i>guess</i> what KV to keep instead of being <i>told</i>. And because the harness can confound results, isolating model effects from serving effects is half our methodological contribution.</p>
-</div>
-<div class="paper">
-<p class="ptitle">Compiling Agentic Workflows into LLM Weights <span class="meta">— Dennis et al., Univ. of Melbourne · arXiv 2605.22502 <span class="ok">✓</span></span></p>
-<p>Shows that a recurring, procedural agent workflow can be &ldquo;baked into&rdquo; the model&rsquo;s weights, reaching near-frontier quality at roughly one-hundredth the cost — i.e., for routine tasks, you may not need the expensive live agent loop at all (&ldquo;internalize&rdquo; instead of &ldquo;externalize&rdquo;).</p>
-<p class="rel"><b>Why it matters to us:</b> it defines the boundary of our scope. We deliberately target the <i>non-compilable</i> workload — open-ended, long-horizon, novel-each-time tasks — because that is exactly where the live loop (and its serving cost) is unavoidable.</p>
-</div>
-
-<h2>8. Annotated literature, part III — the agentic-serving frontier (our direct competition)</h2>
-
-<h3>Workload characterization (closest prior work)</h3>
-<div class="paper">
-<p class="ptitle">Agentic AI Workload Characteristics <span class="meta">— UIUC / Gimlet Labs / Intel · arXiv 2605.26297 <span class="ok">✓</span></span></p>
-<p>Profiles real agent runs across several benchmarks and finds that agent serving is dominated by token generation (decode) with <b>very high potential cache reuse</b>, and that tool use follows a temporal &ldquo;read/explore then execute/write&rdquo; structure.</p>
-<p class="rel"><b>Why it matters to us:</b> this is the &ldquo;high available reuse&rdquo; end of our story — it establishes how much <i>could</i> be reused, which our work contrasts against what is actually realized under sharing. Its read/write phase finding is the basis of our phase-structure hypothesis.</p>
-</div>
-<div class="paper">
-<p class="ptitle">Sutradhara <span class="meta">— Microsoft Research / M365 · arXiv 2601.12967 <span class="ok">✓</span></span></p>
-<p>Studies agent serving at production scale (using synthetic-but-realistic requests, not real customer traffic) and finds the opposite-seeming result: cache hit rates <b>collapse</b> despite the high potential reuse, and tool calls account for 30&ndash;85% of the time to first token. Importantly, it attributes the collapse to churn and eviction <i>within</i> each agent request, not specifically to multiple workloads sharing the server.</p>
-<p class="rel"><b>Why it matters to us:</b> this is the &ldquo;realized collapse&rdquo; end — and it defines our precise opening. Because Sutradhara is synthetic and attributes collapse to within-request churn, <b>nobody has cleanly isolated the effect of multi-workload sharing on open infrastructure</b>. That isolation is our interleaving hypothesis.</p>
-</div>
-<div class="paper">
-<p class="ptitle">ServeGen <span class="meta">— Alibaba / Peking Univ., NSDI 2026 · arXiv 2505.09999 <span class="ok">✓</span></span></p>
-<p>A large-scale characterization of real production inference (billions of requests) plus an open-source <b>workload generator</b> to reproduce realistic traffic patterns — but covering general language/multimodal/reasoning traffic, <b>not</b> agent tool-loops, and releasing a generator rather than a raw recording.</p>
-<p class="rel"><b>Why it matters to us:</b> it is why we must state our novelty precisely: a public <i>general</i> serving generator exists, so our claim is the absence of a public <i>agentic/mixed, cost-labeled</i> trace specifically.</p>
-</div>
-<div class="paper">
-<p class="ptitle">A CPU-Centric Perspective on Agentic AI <span class="meta">— Georgia Tech / Intel · arXiv 2511.00739 <span class="ok">✓</span></span></p>
-<p>Points out that for agents, a great deal of time and energy goes into the <i>tool</i> processing that happens on the regular CPU (not the GPU) — host-side work can dominate latency.</p>
-<p class="rel"><b>Why it matters to us:</b> reinforces that tool-wait time is real and significant, and warns us to attribute time correctly (CPU tool work vs. GPU idle vs. eviction) — directly relevant to the &ldquo;tool-wait &ne; GPU-idle&rdquo; correction in section 5.</p>
-</div>
-
-<h3>Cache &amp; scheduling mechanisms for agents <span class="note">(this space is crowded &rarr; a mechanism paper is not viable)</span></h3>
-<div class="paper">
-<p class="ptitle">Continuum / CacheTTL <span class="meta">— Berkeley / Sky · arXiv 2511.02230 <span class="ok">✓</span></span></p>
-<p>Keeps an agent&rsquo;s cache alive across short tool-call pauses by giving cached entries a time-to-live (a grace period before eviction), rather than evicting them the moment memory is needed — recognizing that the agent will be back shortly.</p>
-<p class="rel"><b>Why it matters to us:</b> this is the closest mechanism to the &ldquo;retain during tool call&rdquo; policy we test as one arm of the pilot; we measure its value rather than propose it.</p>
-</div>
-<div class="paper">
-<p class="ptitle">KVFlow / KVCOMM / Helium / Autellix <span class="meta">— arXiv 2507.07400, 2510.12872, 2603.16104, 2502.13965 <span class="ok">✓</span></span></p>
-<p>Four representative agent-serving systems. <b>KVFlow</b> evicts based on a graph of the agent&rsquo;s future steps (so it keeps what will be needed soon). <b>KVCOMM</b> shares cache across multiple cooperating agents. <b>Helium</b> treats an agent workflow like a database query plan and schedules the model calls accordingly. <b>Autellix</b> is a serving engine that treats &ldquo;agents as programs&rdquo; with their own scheduling needs.</p>
-<p class="rel"><b>Why it matters to us:</b> collectively they prove the mechanism space is saturated — which is exactly why we do measurement, not mechanism. They are also the prior art our results would inform (and be compared against).</p>
-</div>
-<div class="paper">
-<p class="ptitle">SparseX / TokenDance / ScaleSim / Aragog / AWO / CONCUR <span class="meta">— arXiv 2606.01751, 2604.03143, 2601.21473, 2511.20975, 2601.22037, 2601.22705 <span class="ok">✓</span></span></p>
-<p>The 2026 wave: interleaved and multi-agent cache sharing (SparseX, TokenDance, ScaleSim), just-in-time model routing and meta-tool compilation (Aragog, AWO), and congestion-based concurrency control for agent batches (CONCUR, ICML 2026). All recent, all mechanism-side.</p>
-<p class="rel"><b>Why it matters to us:</b> they confirm the field is converging on this problem fast — the window is closing — and that the differentiated lane is open, reproducible measurement rather than yet another mechanism.</p>
-</div>
-
-<h3>Measurement &amp; cost (the angle adjacent to ours)</h3>
-<div class="paper">
-<p class="ptitle">Don&rsquo;t Break the Cache <span class="meta">— PwC · arXiv 2601.06007 <span class="ok">✓</span></span></p>
-<p>Quantifies how much money and latency prompt-caching saves for long-horizon agent tasks — but measured at the <b>provider-API level</b> (treating the model service as a black box), not inside open serving software.</p>
-<p class="rel"><b>Why it matters to us:</b> it is the closest cost-measurement work, which is exactly why we must distinguish ours: we measure <i>inside</i> open infrastructure, where the cache mechanics are visible and controllable, not through a vendor API.</p>
-</div>
-<div class="paper">
-<p class="ptitle">More with Less; Latency-Reliability-Cost tradeoffs; SWE-EVO <span class="meta">— arXiv 2510.16786, 2605.23929, 2512.18470 <span class="ok">✓</span></span></p>
-<p><b>More with Less</b> measures cost-per-patch for coding agents (about $5&ndash;8 per correct fix over dozens of turns) from the capability side. <b>Latency-Reliability-Cost</b> builds an analytical model of the tradeoffs in agent workflows. <b>SWE-EVO</b> is a long-horizon software-evolution benchmark (multi-pull-request tasks) with a partial-credit &ldquo;Fix Rate&rdquo; metric.</p>
-<p class="rel"><b>Why it matters to us:</b> these measure cost from the task/capability side; we measure it from the serving side and tie it to verified success — a complementary, distinct angle. SWE-EVO is a candidate benchmark for the long-horizon regime.</p>
-</div>
-
-<h3>Industry &amp; vendor results <span class="note">(real and source-checked, but vendor material — motivation only, never quoted as evidence)</span></h3>
-<div class="paper">
-<p class="ptitle">NVIDIA Dynamo — agentic inference <span class="meta">— developer.nvidia.com <span class="ok">✓ real</span></span></p>
-<p>NVIDIA&rsquo;s datacenter serving stack. Two parts are directly relevant. Its <b>KV-aware router</b> keeps a global index of which cache blocks live on which GPU and sends each request to the GPU that already holds the most of its context (so multi-turn conversations don&rsquo;t lose their cache). And it exposes <b>agentic hints</b> (<code>nvext.agent_hints</code>): the agent layer can <i>tell</i> the server a request&rsquo;s priority, expected output length, and to pre-warm a likely cache, plus a time-to-live to pin a prefix. It reports 85&ndash;97% cache hit rates in managed, single-session settings.</p>
-<p class="rel"><b>Why it matters to us:</b> two consequences. (1) It <b>pre-empts our hint-interface idea</b> — the &ldquo;tell the server what to keep&rdquo; contract is already shipping, so that idea becomes &ldquo;measure the value of the existing hints,&rdquo; not &ldquo;propose them.&rdquo; (2) Its 85&ndash;97% are <i>realized</i> hit rates under its own good routing in <i>single-session</i> use — it explicitly does <b>not</b> study multi-workload sharing on a bounded cache, which is exactly our open question. (These numbers are vendor figures and motivation only, not evidence.)</p>
-</div>
-<div class="paper">
-<p class="ptitle">AA-AgentPerf <span class="meta">— Artificial Analysis · artificialanalysis.ai <span class="ok">✓ real</span></span></p>
-<p>A new hardware benchmark for the agent era. It measures how many concurrent agents a system can serve on <b>real coding-agent trajectories</b> (up to 200 steps, contexts up to ~131,000 tokens) while meeting latency targets, with the headline metric being <b>agents served per megawatt</b> of power. It compares NVIDIA, AMD, and Google hardware. The underlying task set is kept private (held out), and it does not yet tie results to per-task cost or success.</p>
-<p class="rel"><b>Why it matters to us:</b> it validates that agent serving on long, real trajectories is the workload of interest — but it measures <i>hardware capacity</i> (agents per megawatt), not <i>cost per verified iteration</i> tied to task success, so our lead metric stays distinct. Because its dataset is closed, it also <b>strengthens</b> our narrower claim: no public <i>mixed, cost-labeled, open-infra</i> agentic trace.</p>
-</div>
-<div class="paper">
-<p class="ptitle">SemiAnalysis InferenceMAX / InferenceX; NVIDIA NemoClaw / OpenShell <span class="meta">— inferencex.semianalysis.com; nvidia.com/nemoclaw <span class="ok">✓ real</span></span></p>
-<p><b>InferenceMAX</b> is an open, continuously-updated benchmark of inference cost-per-token and throughput across hardware — but for general serving, not agents. <b>NemoClaw / OpenShell</b> are NVIDIA&rsquo;s blueprints and sandboxed runtime for building autonomous agents.</p>
-<p class="rel"><b>Why it matters to us:</b> context for the broader stack and the &ldquo;cost per token&rdquo; framing we deliberately move beyond (toward cost per <i>verified</i> outcome); NemoClaw is part of the product world the internship sits in, distinct from this open-measurement paper.</p>
-</div>
-
-<h2>9. What we might be missing (threats to the result)</h2>
-<ol>
-<li><b>Model vs. system confusion (the top risk).</b> Many quantities — how efficiently an agent uses tools, how long it reasons, whether it succeeds — depend on the <i>model</i>, not the server. If we credit those to a serving knob, the result is invalid. We hold the model fixed and vary only serving settings, and explicitly bound which effects are model-driven.</li>
-<li><b>Prove the sharing effect; don&rsquo;t assume it.</b> Because prior work attributes cache collapse to within-request churn, our whole contribution rests on cleanly isolating the sharing effect — hence the rate-matched design in section 5.</li>
-<li><b>Statistical rigor.</b> The kill criteria depend on the effect exceeding noise. Decide in advance what effect size counts as meaningful, budget enough repeats, and report paired comparisons with error bars.</li>
-<li><b>Benchmark licensing and freshness.</b> Confirm each benchmark&rsquo;s license before release; prefer contamination-resistant sets; pin and record exact versions.</li>
-<li><b>Reproducibility and release hygiene.</b> Target the conference&rsquo;s artifact-evaluation badge: pin software versions, random seeds, and environment; license the data and the code; ensure the released trace contains no private content and document exactly how it was collected.</li>
-<li><b>Don&rsquo;t cite vendor headline numbers as evidence.</b> Use Dynamo&rsquo;s and AA-AgentPerf&rsquo;s figures as motivation; measure the claims ourselves on open infrastructure.</li>
-<li><b>Fast-follower risk.</b> The area is hot; a dated public posting plus the released artifact protect priority better than a slow, perfect paper.</li>
-</ol>
-
-<h2>10. Immediate next actions</h2>
+<h2 id="s3">3. What an agent is, and why it stresses serving differently</h2>
+<p>A <b>chat request</b> is one prompt &rarr; one stream; its KV lives for a single turn. An <b>agent</b> is a stateful loop — the model proposes an action, a <b>tool</b> runs (code execution, search, a file edit), the result is appended, and the model is re-entered — for tens to ~200 steps. Four properties make this a different serving workload:</p>
 <ul>
-<li><b>Co-design meeting:</b> settle the nine design issues in section 5 — lead with the metric definition, the data-format fields, and the cost-survivorship fix; confirm the measurement framing is the lead; agree who does what; decide author order in writing.</li>
-<li><b>Redesign</b> the metric and data format accordingly, then run the small pilot and check it against the kill criteria before scaling up.</li>
-<li><b>Decide the hint-interface idea&rsquo;s fate</b> — re-scope to measuring the value of the existing (Dynamo) hints on open infrastructure, or drop it.</li>
-<li><b>Reconcile</b> the old planning notes to one venue and one lead idea.</li>
-<li><b>Resolve</b> the still-unverified references and locate the AA-AgentPerf primary source before any of them enter a draft.</li>
+<li><b>Monotonically growing context.</b> Each step appends; the prefix the model re-reads gets longer and longer.</li>
+<li><b>Heavy re-entry against a shared prefix.</b> The same long history is re-read every step — enormous <i>potential</i> reuse, which is exactly what caching should capture.</li>
+<li><b>Tool-call gaps.</b> Between model turns the agent waits on a tool. The GPU may idle (single-tenant) or serve others (multi-tenant), and the agent&rsquo;s KV sits idle and evictable.</li>
+<li><b>Long-lived KV state.</b> The cache must survive across tool gaps and across other tenants&rsquo; traffic to pay off.</li>
 </ul>
 
-<p class="small"><b>Update (2026-06-14, supersedes this section):</b> the live ledger (<code>02-literature/sota-verified-2026.md</code>) is now authoritative. Since this brief was generated: <b>Agent Memory (2606.06448)</b>, <b>ThunderAgent (2602.13692)</b>, <b>GoodServe (2605.16867)</b>, and <b>CONCUR (2601.22705)</b> are confirmed <b>REAL ✓</b> (this brief&rsquo;s earlier &ldquo;unverified/wrong-id&rdquo; notes for them are stale). <b>GAIATrace (2606.01725)</b> was added as a public-agent-trace prior. Still genuinely unverified: SideQuest (2602.22603), AutoLab (+0.43 figure), Inside the Scaffold, Self-Harness, lmcache-agent-trace, Agentix@NSDI. The pilot is now two-armed (&tau;&sup2; + SWE-bench Verified, ~1,200 trajectories, ~$500&ndash;600), not the single-arm 600-run/&lt;$300 figure used earlier in this brief.</p>
+<h3>Agent patterns (the loops themselves)</h3>
+<div class="paper"><p class="ptitle">ReAct <span class="meta">— Yao et al., ICLR 2023 · arXiv 2210.03629 <span class="ok">✓</span></span></p>
+<p>Interleaves <i>reasoning</i> traces with <i>acting</i> (tool calls). The default agent loop and GRIT&rsquo;s pilot methodology.</p></div>
+<div class="paper"><p class="ptitle">Reflexion / Toolformer / ReWOO (Plan-and-Execute) / Tree of Thoughts <span class="meta">— arXiv 2303.11366 / 2302.04761 / 2305.18323 / 2305.10601 <span class="ok">✓</span></span></p>
+<p>Reflexion adds self-critique memory; Toolformer learns when to call tools; ReWOO decouples planning from execution (a different KV-reuse profile); ToT searches over reasoning branches (fan-out). These define the space of loops a serving study must keep in mind even if the pilot fixes one (ReAct).</p></div>
+<div class="paper"><p class="ptitle">Model Context Protocol (MCP) <span class="meta">— Anthropic, open standard <span class="ok">✓</span> (context)</span></p>
+<p>The emerging tool-interface standard — the &ldquo;pauses&rdquo; in the loop are MCP/tool calls.</p></div>
+<p class="rel"><b>Why this matters to GRIT:</b> the high re-entry + growing prefix is the source of <i>available</i> reuse; the tool gaps + long-lived KV are where eviction under shared load destroys <i>realized</i> reuse. The gap between the two is the whole study.</p>
 
-<div class="footer">GRIT — Annotated Working Brief · last updated 2026-06-14 17:09 PDT · internal / pre-publication · companion to the project repository (STATUS.md holds the live state)</div>
+<h2 id="s4">4. The ecosystem and the orchestrator&harr;engine seam</h2>
+<p>The interactive version of this map is <code>docs/ecosystem-map.html</code> (a systems-paper &ldquo;Figure 1&rdquo;). In words, the stack runs left-to-right:</p>
+<ul>
+<li><b>Clients &amp; agents</b> — coding agents (Cursor, Claude Code, Codex, OpenHands), web/computer-use agents, and <b>chat/RAG traffic</b> (the co-tenant in mixed serving).</li>
+<li><b>Orchestration</b> — LangGraph, CrewAI, the OpenAI Agents SDK drive the loop. Crucially they are <b>workflow-agnostic to the engine</b>.</li>
+<li><b>Open serving engines</b> — vLLM, SGLang — plus <b>KV infra</b> (Mooncake, LMCache, llm-d) and a crowded field of <b>agent-aware mechanisms</b>.</li>
+<li><b>Vendor / hardware</b> — NVIDIA Dynamo (KV-aware router + agent hints), AMD/TPU.</li>
+<li><b>Measurement</b> — Cost-of-Pass (the anchor), AA-AgentPerf, InferenceX, and the task benchmarks.</li>
+</ul>
+
+<div class="callout"><h4>The seam (the mechanistic root cause)</h4>
+<p style="margin:4px 0">By default the orchestrator and the engine are decoupled: the engine sees a <b>flat stream of independent requests</b> and is blind to the agent loop, the coming tool pause, and cross-request prefix sharing (Cortex&rsquo;s word: <b>&ldquo;workflow-agnostic&rdquo;</b>). Under mixed traffic on a bounded cache, that blindness is where an agent&rsquo;s realized reuse falls below its available reuse. The 2026 frontier is a race to break the seam, split into two families:</p>
+<ul style="margin:4px 0">
+<li><b>Declared</b> (the agent <i>tells</i> the engine its structure): Dynamo <code>nvext.agent_hints</code>, KVFlow (Agent Step Graph), Helium (query plan), HexAGenT (online-revealed DAG), Cortex (call graph + SLO slack), Autellix/ThunderAgent (workflows-as-programs), Sutradhara (explicit co-design).</li>
+<li><b>Inferred</b> (the engine <i>guesses</i>, no signal): Continuum/CacheTTL (a TTL heuristic), GoodServe (predicts output length + GPU state at the router).</li>
+</ul>
+<p style="margin:4px 0"><b>GRIT&rsquo;s wedge:</b> nobody has <i>measured</i>, on open infra under realistic mixed traffic, how much reuse is lost when this awareness is absent vs. present — the <b>&ldquo;value of awareness.&rdquo;</b> <b>Severity caveat:</b> RadixAttention already shares prefixes by content and good routing (Dynamo reports 85–97% hit rates in managed single-session settings) recovers a lot — so the seam bites hardest under <b>bounded cache + interleaving + long horizon</b>, and may be minor when well-provisioned. If &ldquo;just add cache&rdquo; recovers most reuse, the measured value of awareness is small — itself a publishable result.</p></div>
+
+<h3>Personas &amp; their pains (who acts on the number)</h3>
+<table><thead><tr><th>Persona</th><th>Pain</th><th>What GRIT gives them</th></tr></thead><tbody>
+<tr><td>Platform / serving engineer</td><td>can&rsquo;t explain why agents cost ~5&times; chat under shared load</td><td>the locality-tax attribution</td></tr>
+<tr><td>Agent product builder</td><td>$/token looks fine but $/completed-task explodes at long horizons</td><td>the Cost-of-Grit curve</td></tr>
+<tr><td>ML-systems researcher</td><td>no public mixed, cost-labeled agent trace; can&rsquo;t compare engines fairly</td><td>the released trace (C3)</td></tr>
+<tr><td>Eng leadership / FinOps</td><td>unpredictable bills; no cost-per-successful-task meter</td><td>a budgetable meter</td></tr>
+</tbody></table>
+
+<h2 id="s5">5. The literature, annotated</h2>
+<p>Every entry below is <span class="ok">✓</span> in the ledger. Paragraph summaries for the load-bearing papers; grouped one-liners for the rest. <b>Relevance-to-GRIT</b> is highlighted where it matters.</p>
+
+<h3>5a. Foundations — the inference canon</h3>
+<div class="paper"><p class="ptitle">Attention Is All You Need <span class="meta">— Vaswani et al., NeurIPS 2017 · arXiv 1706.03762 <span class="ok">✓</span></span></p>
+<p>The transformer. The KV cache exists because of attention; the locality gap is a statement about how well that cache is managed.</p></div>
+<div class="paper"><p class="ptitle">Efficiently Scaling Transformer Inference <span class="meta">— Pope et al., MLSys 2023 · arXiv 2211.05102 <span class="ok">✓</span></span></p>
+<p>The clearest analytical account of the inference roofline (compute- vs bandwidth-bound), MFU, and why attention variants scale. Read first to build intuition.</p></div>
+<div class="paper"><p class="ptitle">Orca; PagedAttention / vLLM; Sarathi-Serve <span class="meta">— OSDI 2022 / SOSP 2023 (2309.06180) / OSDI 2024 (2403.02310) <span class="ok">✓</span></span></p>
+<p>The serving-systems baseline: continuous iteration-level batching (Orca); OS-style paging of the KV cache so it isn&rsquo;t contiguous (vLLM — our open baseline); chunked prefill that interleaves long prompts with ongoing decode (Sarathi-Serve, also a confound for latency).</p></div>
+<div class="paper"><p class="ptitle">SGLang / RadixAttention <span class="meta">— Zheng et al., NeurIPS 2024 · arXiv 2312.07104 <span class="ok">✓</span></span></p>
+<p>Radix-tree prefix sharing across requests + a compressed-FSM for structured output. <b>The most relevant cache story to GRIT</b> — content-based sharing is the &ldquo;best-case reuse ceiling&rdquo; the study measures against. Note: SGLang&rsquo;s tree eviction differs from vLLM&rsquo;s paged LRU, so the two engines are <b>not</b> directly poolable (a stratification variable, not a shared axis).</p></div>
+<div class="paper"><p class="ptitle">Disaggregation: DistServe / Splitwise / Mooncake <span class="meta">— 2401.09670 / 2311.18677 / 2407.00079 <span class="ok">✓</span></span></p>
+<p>Split prefill and decode across GPUs/machines for goodput; Mooncake is KVCache-centric (the stack behind Kimi) and the basis of a public agent trace (see 5e).</p></div>
+<div class="paper"><p class="ptitle">KV size, reuse, eviction, precision <span class="meta">— MQA 1911.02150 · GQA 2305.13245 · Prompt Cache 2311.04934 · StreamingLLM 2309.17453 · H2O 2306.14048 · KIVI 2402.02750 · FlashAttention 2205.14135 (+2/3) · FlashInfer 2501.01005 <span class="ok">✓</span></span></p>
+<p>Shrink the cache (MQA/GQA one/few KV heads; KIVI 2-bit quantization); reuse it (Prompt Cache modular reuse); evict it (StreamingLLM attention sinks + window; H2O heavy-hitter eviction — the academic ancestors of agent-aware eviction); compute attention IO-efficiently (FlashAttention; FlashInfer kernels).</p></div>
+<div class="paper"><p class="ptitle">Parallelism, quantization, speculative decoding <span class="meta">— Megatron 1909.08053 · GPipe 1811.06965 · ZeRO 1910.02054 · Ring 2310.01889 · LLM.int8 2208.07339 · GPTQ 2210.17323 · SmoothQuant 2211.10438 · AWQ 2306.00978 · SpecDecode 2211.17192 · Medusa 2401.10774 · EAGLE 2401.15077 <span class="ok">✓</span></span></p>
+<p>The composable axes (data &times; tensor &times; pipeline &times; sequence/expert), weight/activation quantization (GRIT holds the model + quantization fixed), and draft-and-verify decoding. Cite for concepts; not the focus.</p></div>
+
+<h3>5b. Agentic workload characterization (the closest prior art)</h3>
+<div class="paper"><p class="ptitle">Agentic AI Workload Characteristics <span class="meta">— Yuan, Nayak, Kundu, Talati (UIUC / Gimlet / Intel) · arXiv 2605.26297 <span class="ok">✓</span></span></p>
+<p>Traces ReAct agents across five benchmarks; finds agentic serving is <b>decode-dominated with very high KV reuse</b>, plus a temporal <b>read/explore &rarr; execute/write</b> tool-use structure. <span class="rel" style="display:inline"><b>The &ldquo;high available reuse&rdquo; pole of GRIT&rsquo;s contradiction</b> (caching should win big).</span></p></div>
+<div class="paper"><p class="ptitle">Sutradhara <span class="meta">— Biswas et al. (Microsoft Research / M365) · arXiv 2601.12967 <span class="ok">✓</span></span></p>
+<p><b>Synthetic requests at production scale</b> (not real customer traffic — important). Finds tool calls are 30–85% of time-to-first-token and <b>KV hit rates collapse despite reuse</b>; proposes orchestrator-engine co-design. <span class="rel" style="display:inline"><b>The &ldquo;realized collapse&rdquo; pole</b> — but it attributes collapse to intra-request churn + eviction, <b>not</b> specifically to multi-tenancy, which is precisely the opening: nobody has cleanly isolated the multi-tenant-interleaving contribution on open infra.</span></p></div>
+<div class="paper"><p class="ptitle">KVCache-in-the-Wild <span class="meta">— SJTU/Alibaba, USENIX ATC&rsquo;25 · arXiv 2506.02634 <span class="ok">✓</span> (closest pre-empt)</span></p>
+<p>Production-trace characterization of KV reuse including an <b>ideal-hit-ratio-vs-cache-size</b> curve (&asymp; realized-vs-available) on real mixed traffic. <b>Pre-empts the characterization half</b> — but on a <i>closed</i> stack, no agent tool-gap isolation, no cost-per-task. GRIT&rsquo;s wedge = open infra + agent + cost-per-verified-task.</p></div>
+<div class="paper"><p class="ptitle">ServeGen; CPU-Centric Agentic AI; Agent Memory; Compiling Agentic Workflows <span class="meta">— 2505.09999 (NSDI&rsquo;26) · 2511.00739 · 2606.06448 · 2605.22502 <span class="ok">✓</span></span></p>
+<p>ServeGen: real prod characterization (billions of req) + a generator, but <i>non-agentic</i> data. CPU-Centric: host-CPU tool processing can dominate latency (so &ldquo;tool gap&rdquo; &ne; &ldquo;GPU idle&rdquo;). Agent Memory (Omri/Tambe, Stanford): first systems characterization of agent <i>memory</i> — a close characterization competitor on a different axis (memory state vs KV-locality/cost). Compiling-into-weights: near-frontier quality at ~1/100 cost — the boundary that scopes GRIT to non-compilable workloads.</p></div>
+
+<h3>5c. Cache / scheduling mechanisms for agents (CROWDED — mechanism paper is dead)</h3>
+<p class="small">Continuum/CacheTTL (2511.02230, KV TTL across tool gaps) &middot; KVFlow (2507.07400, workflow-aware eviction via an Agent Step Graph) &middot; KVCOMM (2510.12872, training-free cross-agent KV reuse) &middot; Helium (2603.16104, workflows as query plans) &middot; Autellix (2502.13965, agents-as-programs engine) &middot; ThunderAgent (2602.13692, program-aware scheduler, 1.5–3.6&times; vLLM) &middot; SAGA (2605.00528, workflow-atomic scheduling on vLLM; predicts cross-tool-call reuse to within 1.31&times; of Bélády) &middot; HexAGenT (2605.16637) &middot; Cortex (2510.14126) &middot; SparseX (2606.01751) &middot; TokenDance (2604.03143) &middot; ScaleSim (2601.21473) &middot; Aragog (2511.20975) &middot; AWO (2601.22037) &middot; CONCUR (2601.22705) &middot; plus a 2026 wave: TokenCake (2510.18586), RelayCaching (2603.13289), PrefillShare (2602.12029), PPD (2603.13358), CacheFlow (2604.25080), Halo (2509.02121), PBKV (2605.06472), AgentServeSim (2606.09613), Agent.xpu (2506.24045), WRP (2603.21354). All <span class="ok">✓</span>.</p>
+<p class="rel"><b>Why GRIT is not a mechanism paper:</b> every one of these <i>builds</i> the fix. GRIT instead <b>measures the value</b> of awareness on open infra — and uses these as the &ldquo;present awareness&rdquo; comparison points. <b>Adjacent (not agent-specific):</b> FlashMemory-DeepSeek-V4 / Lookahead Sparse Attention (2606.09079, Tencent) — a learned Neural Memory Indexer predicts query-critical KV chunks (~13.5% kept); <i>intra-request</i> long-context sparsification, DeepSeek-V4-coupled, preliminary — prior art for the phase-structure hypothesis (H3), does not pre-empt C1.</p>
+
+<h3>5d. Measurement &amp; cost (the angle adjacent to GRIT)</h3>
+<div class="paper"><p class="ptitle">Cost-of-Pass <span class="meta">— Erol, El, Suzgun, Yüksekgönül, Zou (Stanford) · arXiv 2504.13359 · OpenReview vC9S20zsgN (ICLR&rsquo;26 submission; acceptance unconfirmed) <span class="ok">✓</span></span></p>
+<p>Formalizes <b>cost-of-pass</b> = the expected monetary cost of generating a <i>correct</i> solution, built on Farrell&rsquo;s productive-efficiency theory; defines a frontier cost-of-pass across models. <span class="rel" style="display:inline"><b>The academic anchor for GRIT&rsquo;s denominator.</b> GRIT moves it from the API black box into open-infra internals and ties its cost term to the locality gap — that move, not the metric name, is the novelty. Cite it; do not imply the metric is new.</span></p></div>
+<div class="paper"><p class="ptitle">GoodServe <span class="meta">— Du et al. (SJTU/CUHK-SZ) · arXiv 2605.16867 <span class="ok">✓</span></span></p>
+<p>Agentic <b>goodput</b> = E2E-SLO completions/s over heterogeneous GPUs. Router-layer: <b>predicts output length</b> (a MoE of MLPs, with task type as a <i>feature</i>) + GPU serving state, then routes &ldquo;predict-and-rectify&rdquo; (no hints). No cost-to-success, no released trace. <span class="rel" style="display:inline"><b>The throughput-side dual of GRIT&rsquo;s cost-per-verified-task</b> — they optimize, GRIT measures + attributes to cache locality.</span></p></div>
+<div class="paper"><p class="ptitle">Don&rsquo;t Break the Cache; More with Less; EET; Efficient Agents; HAL; SWE-EVO; TokenPowerBench <span class="meta">— 2601.06007 · 2510.16786 · 2601.05777 · 2508.02694 · 2510.11977 · 2512.18470 · 2512.03024 <span class="ok">✓</span></span></p>
+<p>Don&rsquo;t Break the Cache: quantifies prompt caching for agents at the <i>provider-API black box</i> (the trap GRIT avoids by measuring open-infra internals). More with Less: cost-per-patch (~$5.85 avg; 41–58 median turns) on the capability side. EET: experience-driven early stopping (−32% cost, &le;0.2% resolution loss — &ldquo;when to stop gritting&rdquo;). Efficient Agents: efficiency–effectiveness tradeoff. HAL: accuracy–cost Pareto. SWE-EVO: multi-PR tasks + a partial-progress &ldquo;Fix Rate.&rdquo; TokenPowerBench: J/token energy (the energy numerator). Latency-Reliability-Cost (2605.23929), Efficiency Frontier (2605.23071), Price of Progress (2511.23455), Observation-Masking (2508.21433, a cost confound), SWE-Pruner (2601.16746) round out the set.</p></div>
+
+<h3>5e. Benchmarks &amp; public traces</h3>
+<p><b>Task benchmarks:</b> SWE-bench Verified (MIT; the de-facto coding-agent set), SWE-bench Pro (2509.16941, contamination-resistant), SWE-bench-Live, SWE-EVO (2512.18470), AppWorld (2407.18901), &tau;&sup2;-bench (Sierra; tool-agent-user), GAIA, BFCL. <b>GRIT&rsquo;s pilot runs &tau;&sup2; + SWE-bench Verified.</b></p>
+<p><b>Public serving traces (the C3 landscape):</b></p>
+<table><thead><tr><th>Trace</th><th>real?</th><th>agentic?</th><th>cost-labeled?</th><th>role for GRIT</th></tr></thead><tbody>
+<tr><td>BurstGPT (2401.17644 <span class="ok">✓</span>)</td><td>yes (Azure-OpenAI, 213 days)</td><td>no (chat)</td><td>no</td><td>the realistic <b>chat co-tenant</b></td></tr>
+<tr><td>Azure LLM Inference Traces</td><td>yes</td><td>partial (coding)</td><td>no</td><td>co-tenant + arrival dynamics</td></tr>
+<tr><td>vLLM &times; Mooncake corpus</td><td>yes</td><td>yes (agent-only)</td><td>no</td><td>replay agent cache behavior</td></tr>
+<tr><td>GAIATrace (2606.01725 <span class="ok">✓</span>)</td><td>yes</td><td>yes (GAIA)</td><td>no</td><td>token-level agent trace + Vidur-Agent sim</td></tr>
+</tbody></table>
+<p class="rel"><b>The empty cell remains:</b> none is <i>mixed chat+agent + cost-labeled + open-infra + OTel</i>. So C3&rsquo;s niche holds — but GRIT should <b>ingest</b> BurstGPT/Azure (chat) + vLLM&times;Mooncake/GAIATrace (agent) rather than synthesize, which raises realism and reframes C3 as &ldquo;the missing combination.&rdquo; <span class="warn">⚠ Locate the primary URL for the vLLM&times;Mooncake figures before citing them.</span></p>
+
+<h3>5f. Industry / vendor (motivation only — never cited as research evidence)</h3>
+<p class="small"><b>NVIDIA Dynamo</b> — KV-aware router (global KV-block index, overlap-score placement) + agent hints (<code>nvext.agent_hints</code> = priority/osl/speculative_prefill + <code>cache_control</code> TTL); reports 85–97% Claude-Code cache hit (<i>realized under its own routing — not infinite-cache &ldquo;available&rdquo;</i>); no multi-tenant interleaving analysis, no released traces. <b>AA-AgentPerf</b> (Artificial Analysis) — agents-per-megawatt under SLO tiers on real coding trajectories; test set <i>closed</i>; cost-per-success is future work. <b>InferenceX / InferenceMAX</b> (SemiAnalysis) — open $/token / throughput, not agentic. <b>NemoClaw / OpenShell</b> — autonomous-agent blueprints + sandboxed runtime.</p>
+<p class="rel"><b>Net for GRIT:</b> C4 (a hint <i>spec</i>) is <b>pre-empted</b> by Dynamo; re-scope to measuring the value of existing hints. C1 (cost-per-verified-task tied to cache) and C3 (a mixed, cost-labeled, open trace) stay distinct and are <i>strengthened</i> by the fact that the vendor numbers are realized-only and the test sets/traces are closed.</p>
+
+<h2 id="s6">6. The tools you will actually use</h2>
+<ul>
+<li><b>vLLM</b> (<code>--enable-prefix-caching</code>) — the open baseline engine. Exposes <code>vllm:prefix_cache_queries</code> / <code>vllm:prefix_cache_hits</code> Prometheus counters and per-request <code>num_cached_tokens</code> — GRIT&rsquo;s realized-reuse source.</li>
+<li><b>SGLang</b> (RadixAttention) — the second engine and the content-based reuse ceiling.</li>
+<li><b>KV infra:</b> LMCache (re-exposes cache metrics via the vLLM <code>/metrics</code> endpoint), Mooncake / llm-d (distributed KV pools/offload).</li>
+<li><b>Observability:</b> Prometheus <code>/metrics</code>, vLLM <code>SchedulerStats</code> + <code>LLM.get_metrics()</code>; the OpenTelemetry gen-ai semantic-conventions effort (proposed <code>gen_ai.server.kv_cache.*</code> — not stable yet). <b>Caveat (see §7):</b> per-tenant <i>eviction attribution</i> is not exposed off-the-shelf and needs a validated engine patch.</li>
+<li><b>Benchmark harnesses:</b> SWE-bench&rsquo;s <code>FAIL_TO_PASS</code> oracle; &tau;&sup2;-bench&rsquo;s success check; HAL for cost-aware scoring.</li>
+<li><b>The GRIT harness:</b> <code>05-experiments/pilot/harness/trace_schema.py</code> (the measurement contract — runs/smoke-tested) and <code>run_pilot.py</code> (the orchestration skeleton with co-design seams). <b>Wrong-layer tools:</b> GPU profilers (Nsight Compute/Systems) and reuse predictors (Tencent FlashMemory) cannot source per-tenant eviction attribution — it is an engine block-manager fact (see <code>docs/observability-and-power.md</code>).</li>
+</ul>
+
+<h2 id="s7">7. The GRIT project</h2>
+
+<h3>The problem, precisely</h3>
+<p>Two poles that don&rsquo;t meet: high <i>available</i> reuse (2605.26297) vs. <i>realized</i> collapse (Sutradhara, synthetic, intra-request) — because <b>no one has isolated the multi-tenant driver on open infrastructure</b>. Under realistic <i>mixed</i> chat&times;agent traffic on a <i>bounded</i> open-infra cache, GRIT asks: (1) how far realized falls below available (the <b>locality gap</b>); (2) how much of the drop is <b>interleaving</b> vs. intra-agent churn; (3) what it costs <b>per verified task</b> (the Cost of Grit). Root cause: the workflow-agnostic <b>seam</b> (§4).</p>
+
+<h3>Contributions</h3>
+<table><thead><tr><th>&nbsp;</th><th>Contribution</th><th>Status</th></tr></thead><tbody>
+<tr><td><b>C1</b> (lead)</td><td>the realized-vs-available cache-locality gap quantified on open infra, priced as the &ldquo;Cost of Grit&rdquo; (cost per verified task)</td><td>pilot pending</td></tr>
+<tr><td><b>C3</b> (artifact)</td><td>a released mixed chat&times;agent, cost-labeled, OpenTelemetry-format serving trace + harness</td><td>bundled with C1</td></tr>
+</tbody></table>
+<p class="small">C2 (cache-aware context-edit policy), C4 (hint interface — pre-empted by Dynamo, re-scoped to value-of-hints), C5 (the product/PM metering twin — out of scope for the paper), C6 (harness-conditional benchmarking) are secondary/parked. Killed ideas live in <code>04-ideas/graveyard.md</code> (a generic mechanism paper; naive &ldquo;agents &ne; chat&rdquo; characterization; &ldquo;first public agent trace&rdquo; as a headline).</p>
+
+<h3>The metric — sharpened after adversarial review (the make-or-break)</h3>
+<p>The denominator is <b>cost per verified <i>task</i></b> (binary success: SWE-bench <code>FAIL_TO_PASS</code> / &tau;&sup2;-success) over a <b>frozen task population</b> with a pre-registered retry policy, counting the cost of <b>failed attempts</b> (that is where grit&rsquo;s cost lives). Numerator: GPU-seconds (primary, hardware-neutral), plus $ and Joules. Always a <b>curve</b> over horizon &times; cache policy &times; tenancy, never a scalar. Partial credit (Fix Rate) is a <i>separate supplementary</i> view, not the headline denominator; do not pre-select &ldquo;solvable&rdquo; tasks.</p>
+<div class="callout"><h4>The locality tax must be a same-stream counterfactual (not a &ldquo;share of the gap&rdquo;)</h4>
+<p style="margin:4px 0">A June-2026 adversarial review correctly objected that &ldquo;the fraction of cost attributable to eviction&rdquo; is <b>not identified</b> — the $/token-vs-$/task gap absorbs context growth, iteration count, failures, tool cost, queueing, and model behavior, so a cache-hit-rate delta cannot, alone, claim a share of GPU-seconds. <b>The fix (the real C1 primitive):</b> record the agent trajectory <i>once</i>, freeze the exact token/block stream, and replay it twice under the engine schedule — (a) the <b>bounded</b> cache that shipped, (b) a counterfactual where every reuse-eligible prefix block is <b>resident</b> (oracle cache) — holding model, decode, ordering, and offered load fixed. <b>locality tax &equiv; &Delta; GPU-seconds (bounded &minus; resident) per verified task.</b> If that counterfactual is not realizable on stock engines, it <b>gates C1</b>. Two scope-matched estimands (lineage-only; global-stream) are reported separately, because engine-realized hits can include other tenants&rsquo; blocks (so &ldquo;realized &le; available&rdquo; only holds on a matched scope).</p></div>
+
+<h3>Hypotheses (each falsifiable, with a kill criterion)</h3>
+<ul>
+<li><b>H1</b> — the locality gap is real on open infra, and multi-tenant <b>interleaving</b> is a distinct driver (separable from intra-agent churn). <i>Clean test:</i> same request multiset/arrivals/budget/load; vary only ordering and unaware-vs-(oracle/hinted) retention — not isolated-vs-mixed, which changes composition.</li>
+<li><b>H2</b> — the Cost of Grit grows <b>super-linearly</b> with horizon and is cache-policy-sensitive. <i>Kill:</i> linear and policy-insensitive &rarr; no tax story.</li>
+<li><b>H3</b> — tool-gap timing has exploitable <b>phase structure</b> static eviction gets wrong (shown in simulation, not built). <i>Kill:</i> tool-gap timing is effectively random.</li>
+<li><b>H4</b> — a small public <b>trace + harness reproduces H1–H2</b> (artifact-as-contribution).</li>
+</ul>
+
+<h3>The pilot (first, cheap, kill-fast)</h3>
+<p><code>ReAct &times; {&tau;&sup2;-bench, SWE-bench Verified} &times; {isolated, mixed} &times; {LRU, retain-during-tool} &times; 50 &times; 3 &asymp; 1,200 trajectories</code>, ~1–2 weeks, ~$500–600 of rented H100. &tau;&sup2; is the cheap tool-gap probe; SWE-bench Verified is the long-horizon arm where the tax should be visible (a &tau;&sup2;-only pilot risks a false-negative kill of H1). Model fixed at Qwen2.5-Coder-32B (the model-vs-system control).</p>
+
+<div class="warnbox"><h4>The two BLOCKERs and how they get solved (<code>docs/observability-and-power.md</code>)</h4>
+<p style="margin:4px 0"><b>(1) Can we see the cache per request?</b> The realized numerator is gettable today (per-request <code>num_cached_tokens</code>; prefix-hit counters). The genuinely missing piece is <b>per-tenant eviction attribution</b> (&ldquo;did chat evict <i>this</i> agent&rsquo;s blocks?&rdquo;). vLLM&rsquo;s eviction telemetry carries lifetime/idle/reuse-gap — <b>not</b> block-id/owner/tenant — so attribution needs a <b>validated, version-pinned block-manager patch</b> (not &ldquo;a few lines&rdquo;); a footprint-matched proxy is a weaker, suggestive fallback. This <b>gates C1</b> and is the first thing the spike checks. <b>(2) Is the denominator big enough?</b> A bare ReAct loop may resolve only single-digit % of SWE-bench Verified &rarr; too few verified tasks per cell. Use a stronger scaffold / solvable subset / &tau;&sup2; as primary; pre-register a minimum-successes-per-cell floor.</p>
+<p style="margin:4px 0"><b>Replay &ne; instrumentation.</b> Recovering <i>available</i> reuse offline is gated by what the harness <i>logs</i> (the recorded stream), not by engine internals — the easier half. <b>Statistical soundness is NOT yet established:</b> there is no variance estimate, MDE, or power result; the 1,200-trajectory matrix is <i>not</i> &ldquo;power-sized&rdquo; — run a micro-pilot, estimate task- and run-level variance, then pre-register a cluster-aware power calc (bootstrap over <i>tasks</i>, ~50 effective, not trajectories).</p></div>
+
+<h3>Threats to validity (the methods-section commitments)</h3>
+<p class="small">Model-vs-system boundary (hold the model fixed; the #1 threat); prove interleaving, don&rsquo;t assume it; statistical rigor + pre-registered effect size; benchmark licensing/currency + version pinning; artifact-evaluation hygiene; trace-release PII/legality. <b>Plus the confounds added after review:</b> saturation/provisioning regime; chat-tenant SLO harm; synthetic-mixture validity (drive the chat co-tenant from a real trace); instrumentation/engine-patch perturbation; quantization/block-size/routing/placement; timeout censoring; scaffold selection; multiple comparisons; benchmark-oracle error. Full list: <code>docs/threats-to-validity.md</code>.</p>
+
+<h3>Honest status</h3>
+<p>Pre-data; the metric/trace contract is under active redesign and the design issues gate GPU spend. An external adversarial (Codex) review in June 2026 returned a provisional <i>reject</i> with one decisive risk: <b>no defensible counterfactual connecting lost reuse to cost-per-task</b>. That objection is now answered by the same-stream oracle-vs-bounded definition above — which converts the review&rsquo;s fatal point into the concrete thing the pilot must demonstrate. The window is closing (the field is converging on this seam); defensibility is the bundle + open reproducibility + the counterfactual primitive, not any single number.</p>
+
+<h2 id="s8">8. Open questions, the benchmark&harr;production gap, who to talk to</h2>
+<p><b>Harness/developer needs &amp; TTFT.</b> The locality gap <i>is</i> a time-to-first-token story: a surviving prefix-cache hit skips prefill (low TTFT); an evicted prefix recomputes (high TTFT + cost). GRIT should report TTFT + tail-TTFT as first-class outputs, and promote &ldquo;value of awareness&rdquo; (C4 re-scope) to a measured axis. Deployment friction proper (cold start, autoscaling) is out of scope (the C5 product twin).</p>
+<p><b>Benchmark&harr;production gap.</b> Benchmarks are curated single tasks with synthetic arrivals; production is concurrent, bursty, multi-tenant. C3 answers this, but GRIT inherits the agent-distribution gap by running on benchmarks. <b>Fix:</b> drive the chat co-tenant from a <i>real</i> trace (BurstGPT/Azure) and name the residual gap; optionally replay a real agent corpus for the cache half.</p>
+<p><b>Who to talk to (to understand agents in the wild).</b> Inside NVIDIA: the Dynamo PM/eng + customer teams (real agent serving workloads). Serving vendors: Together, Fireworks, Baseten, Anyscale, Modal. The harnesses themselves: Cursor, Cognition/Devin, All Hands/OpenHands, Replit, Sourcegraph/Amp, Windsurf. Orchestration: LangChain/LangGraph, CrewAI. Observability (aggregate in-the-wild telemetry): LangSmith, Braintrust, Arize, Helicone. Trace authors: Moonshot (Mooncake), the BurstGPT/Azure + KVCache-in-the-Wild authors. Full writeup: <code>docs/discovery-and-gaps.md</code>.</p>
+
+<h2 id="s9">9. Next actions · reading queue · unverified citations</h2>
+<p><b>Immediate:</b> (1) the co-design sync — settle the design issues (lead with the same-stream counterfactual, the trace fields, the cost-survivorship rule); confirm measurement is the lead; agree ownership + author order in writing. (2) Run the instrumentation + floor-rate <b>spike</b> before the full cell (it answers the circular &ldquo;settle-before-spend&rdquo; issues). (3) Then run the 1,200-trajectory pilot against the kill criteria. (4) Ingest BurstGPT/Azure as the real chat co-tenant. (5) Locate the vLLM&times;Mooncake primary URL.</p>
+<p class="small"><b>Reading queue (priority):</b> Cost-of-Pass (2504.13359) for the metric write-up; KVCache-in-the-Wild (2506.02634) + SAGA (2605.00528) as the closest pre-empts; Continuum/CacheTTL (2511.02230) + KVFlow (2507.07400) for the inferred/declared mechanisms; GoodServe (2605.16867) for the goodput dual; Agent Memory (2606.06448) + GAIATrace (2606.01725) for adjacent characterization/traces.</p>
+<div class="warnbox"><p style="margin:0"><b>Still unverified — do NOT cite until checked:</b> SideQuest (2602.22603); AutoLab (and its &ldquo;+0.43&rdquo; harness-ablation figure — do not quote); Inside the Scaffold; Self-Harness; lmcache-agent-trace; Agentix@NSDI. <b>Confirmed real since earlier drafts:</b> Agent Memory (2606.06448 <span class="ok">✓</span>), ThunderAgent (2602.13692 <span class="ok">✓</span>), GoodServe (2605.16867 <span class="ok">✓</span>), CONCUR (2601.22705 <span class="ok">✓</span>), GAIATrace (2606.01725 <span class="ok">✓</span>). Venue labels (ICLR&rsquo;26 for Cost-of-Pass, ICML&rsquo;26 for CONCUR, NSDI&rsquo;26 for ServeGen) are <i>as-claimed</i> and not confirmed accepted.</p></div>
+
+<div class="footer">GRIT — Master Brief · last updated 2026-06-14 17:13 PDT · internal / pre-publication · the live state is <code>STATUS.md</code>; the citation source of truth is <code>02-literature/sota-verified-2026.md</code></div>
 
 </body>
 </html>

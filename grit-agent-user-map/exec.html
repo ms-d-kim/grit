@@ -3,94 +3,104 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Users of Agents — 1-page PM exec summary</title>
+<title>Users of Agents — one-page exec summary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
-  @page{size:Letter;margin:0.5in 0.55in}
-  :root{--ink:#16202b;--muted:#5a6573;--line:#d7dee7;--H:#5a8a00;--accent:#1f4e79;--chipbg:#eef3f8}
+  @page{size:Letter;margin:0.5in 0.6in}
+  :root{--paper:#f7f5ef;--ink:#1d1b18;--muted:#6f6a61;--faint:#a59e90;--line:#e0dcd0;--line2:#cdc7b8;--accent:#7a1f24;
+    --disp:'Playfair Display',Georgia,serif;--serif:'Spectral',Georgia,'Times New Roman',serif}
   *{box-sizing:border-box}
-  html,body{margin:0;background:#eef1f5;color:var(--ink)}
-  body{font:13px/1.42 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-  .page{max-width:920px;margin:18px auto;background:#fff;padding:26px 30px 24px;box-shadow:0 4px 24px rgba(0,0,0,.12);border-radius:8px}
-  a{color:var(--accent);text-decoration:none}
-  .bar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-  h1{font-size:19px;margin:0 0 2px;letter-spacing:-.01em}
-  .deck{color:var(--muted);font-size:11.5px;margin:0}
-  .btn{font:inherit;font-size:11px;border:1px solid var(--line);background:var(--chipbg);border-radius:6px;padding:6px 10px;cursor:pointer;color:var(--ink);white-space:nowrap}
-  .insight{background:linear-gradient(180deg,#f4f9ec,#fbfdf6);border:1px solid #cfe3a8;border-radius:8px;padding:8px 11px;margin:11px 0;font-size:11.5px}
-  .insight b{color:var(--H)}
-  h2{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:15px 0 5px;border-bottom:1px solid var(--line);padding-bottom:3px}
-  table{width:100%;border-collapse:collapse;font-size:10.6px;margin:3px 0}
-  th{text-align:left;color:var(--muted);font-weight:600;padding:3px 6px;border-bottom:1px solid var(--line)}
-  td{padding:3px 6px;border-bottom:1px solid #eef2f6;vertical-align:top}
+  html,body{margin:0;background:#e9e6dd}
+  body{font-family:var(--serif);color:var(--ink);font-size:12.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .page{max-width:900px;margin:22px auto;background:var(--paper);padding:34px 40px 30px;box-shadow:0 6px 30px rgba(40,34,24,.16)}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(122,31,36,.3)}
+  .sc{font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:var(--faint);font-weight:600}
+  .bar{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;border-bottom:1px solid var(--line2);padding-bottom:14px}
+  .kicker{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  h1{font-family:var(--disp);font-weight:600;font-size:27px;margin:0 0 4px;letter-spacing:-.01em}
+  .deck{color:var(--muted);font-size:11.5px;font-style:italic;margin:0}
+  .btn{font-family:var(--serif);font-size:10.5px;letter-spacing:.05em;border:1px solid var(--line2);background:none;border-radius:2px;padding:6px 11px;cursor:pointer;color:var(--ink);white-space:nowrap}
+  .insight{font-style:italic;font-size:12px;color:#3c372d;border-left:2px solid var(--accent);padding:2px 0 2px 14px;margin:14px 0}
+  .insight b{font-style:normal;font-weight:600;color:var(--ink)}.insight .dim{font-style:normal;color:var(--faint);font-size:10.5px}
+  h2{font-family:var(--serif);font-size:10.5px;text-transform:uppercase;letter-spacing:.18em;color:var(--faint);font-weight:600;margin:18px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
+  table{width:100%;border-collapse:collapse;font-size:10.4px;margin:2px 0}
+  th{text-align:left;font-family:var(--serif);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:4px 7px;border-bottom:1px solid var(--line2)}
+  td{padding:4px 7px;border-bottom:1px solid var(--line);vertical-align:top}
   tr:last-child td{border-bottom:none}
-  .p{display:inline-block;font-size:9px;font-weight:700;color:#fff;border-radius:4px;padding:1px 5px}
-  .pH{background:var(--H)}.pM{background:#c79100}.pL{background:#9aa0a6}.pS{background:#8b7cf6}
-  .prio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px}
-  .pcard{border:1px solid var(--line);border-left:3px solid var(--H);border-radius:7px;padding:8px 10px}
-  .pcard h3{margin:0 0 3px;font-size:12.5px}
-  .pcard .why{color:var(--muted);font-size:10.6px;margin:0 0 5px}
-  .pcard .do{font-size:10.8px}.pcard .do b{color:var(--H)}
-  .two{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
-  ul{margin:4px 0;padding-left:15px}li{margin:2px 0;font-size:11px}
-  .foot{color:#8a93a0;font-size:9.5px;margin-top:14px;border-top:1px solid var(--line);padding-top:7px}
-  @media print{body{background:#fff}.page{box-shadow:none;margin:0;max-width:none;border-radius:0;padding:0}.btn{display:none}}
+  .prio{font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+  .pH{color:var(--accent)}.pM{color:var(--ink)}.pL,.pS{color:var(--faint)}
+  .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-top:5px}
+  .pcard{border:1px solid var(--line2);border-radius:2px;padding:10px 13px}
+  .pcard h3{font-family:var(--disp);margin:0 0 3px;font-size:14px;font-weight:600}
+  .pcard h3 .n{color:var(--accent);font-size:12px;margin-right:5px}
+  .pcard .why{color:var(--muted);font-style:italic;font-size:10.4px;margin:0 0 6px}
+  .pcard .do{font-size:10.6px}.pcard .do b{color:var(--accent);font-weight:600}
+  .two{display:grid;grid-template-columns:1.25fr 1fr;gap:22px;margin-top:4px}
+  ul{margin:4px 0;padding-left:15px}li{margin:3px 0;font-size:11px}
+  li b{font-weight:600}
+  .foot{color:var(--faint);font-size:9.5px;font-style:italic;margin-top:16px;border-top:1px solid var(--line);padding-top:8px}
+  .foot a{color:var(--muted)}
+  @media print{html,body{background:#fff}.page{box-shadow:none;margin:0;max-width:none;padding:0}.btn{display:none}}
 </style>
 </head>
 <body>
 <div class="page">
   <div class="bar">
-    <div><h1>Users of Agents — PM exec summary</h1>
-      <p class="deck">MECE segmentation by primary economic role w.r.t. the agentic-inference layer · NVIDIA inference-team lens · GRIT companion · 2026-06-15</p></div>
-    <button class="btn" onclick="window.print()">⎙ Print / PDF</button>
+    <div><p class="kicker">GRIT · agentic inference</p>
+      <h1>Users of Agents</h1>
+      <p class="deck">A one-page field guide for the inference-team PM · MECE by primary economic role w.r.t. the serving layer · 2026-06-15</p></div>
+    <button class="btn" onclick="window.print()">Print / PDF</button>
   </div>
 
-  <div class="insight"><b>The one insight:</b> the literal <i>user</i> of an inference service is increasingly the <b>agent</b> (a machine client emitting a long, stateful, re-entrant request stream), not the humans/orgs using agents. NVIDIA inference sells <b>directly to ≤3</b> segments; the rest are demand-shapers, SLO-setters, or standards levers. <span style="color:var(--muted)">Figures directional unless cited; Dynamo 85–97% = realized single-session under its own routing.</span></div>
+  <p class="insight"><b>The one insight.</b> The literal <i>user</i> of an inference service is increasingly the <b>agent</b> — a machine client emitting a long, stateful, re-entrant request stream — not the humans/orgs using agents. NVIDIA inference sells <b>directly to ≤3</b> segments; the rest are demand-shapers, SLO-setters, or standards levers. <span class="dim">Figures directional unless cited; Dynamo 85–97% = realized single-session under its own routing.</span></p>
 
   <h2>The map at a glance</h2>
   <table>
-    <thead><tr><th>Segment</th><th>Who</th><th>Inference touchpoint (what they buy)</th><th>Priority</th></tr></thead>
+    <thead><tr><th>Segment</th><th>Who</th><th>Inference touchpoint — what they buy</th><th>Priority</th></tr></thead>
     <tbody>
-      <tr><td><b>Inference-serving operators</b></td><td>own the GPU fleet, on the hook for $/token+SLO</td><td><b>THE direct buyer</b> — GPUs/DGX + AI Enterprise/NIM + Dynamo + TRT-LLM</td><td><span class="p pH">HIGH</span></td></tr>
-      <tr><td><b>Model providers / labs</b></td><td>train & own weights; ship own agents</td><td>indirect (via clouds) + co-designer + partial competitor — DGX Cloud, NVL72</td><td><span class="p pH">HIGH</span></td></tr>
-      <tr><td><b>Enterprise internal teams</b></td><td>banks/telco/health/gov building internal agents</td><td>direct (self-host) — AI Enterprise + NIM, DGX/HGX, Dynamo</td><td><span class="p pH">HIGH</span></td></tr>
-      <tr><td>Agent frameworks / orchestration</td><td>LangGraph, CrewAI, Agents SDK, AutoGen</td><td>non-buyer; highest-leverage standards lever (NeMo Agent Toolkit)</td><td><span class="p pM">MED</span></td></tr>
-      <tr><td>Adjacent tooling / ecosystem</td><td>observability, gateways, memory, FinOps</td><td>indirect; gateways partner/compete with Dynamo router</td><td><span class="p pM">MED</span></td></tr>
-      <tr><td>Agent product builders (AI-native)</td><td>Cursor, Devin, Harvey, Sierra</td><td>indirect→direct as they self-host for margin (NIM)</td><td><span class="p pM">MED</span></td></tr>
-      <tr><td>Agent end-users (humans)</td><td>prosumers, knowledge workers, LoB</td><td>non-buyer — workload spec & SLO-setter</td><td><span class="p pL">LOW</span></td></tr>
-      <tr><td>Agent-as-machine-client</td><td>the request stream itself (not an actor)</td><td>non-buyer — <i>it is the serving spec</i></td><td><span class="p pS">SPEC</span></td></tr>
+      <tr><td><b>Inference-serving operators</b></td><td>own the GPU fleet; on the hook for $/token + SLO</td><td>THE direct buyer — GPUs/DGX + AI Enterprise/NIM + Dynamo + TRT-LLM</td><td><span class="prio pH">High</span></td></tr>
+      <tr><td><b>Model providers / labs</b></td><td>train & own weights; ship own agents</td><td>indirect (via clouds) + co-designer + partial competitor — DGX Cloud, NVL72</td><td><span class="prio pH">High</span></td></tr>
+      <tr><td><b>Enterprise internal teams</b></td><td>banks/telco/health/gov building internal agents</td><td>direct (self-host) — AI Enterprise + NIM, DGX/HGX, Dynamo</td><td><span class="prio pH">High</span></td></tr>
+      <tr><td>Agent frameworks / orchestration</td><td>LangGraph, CrewAI, Agents SDK, AutoGen</td><td>non-buyer; highest-leverage standards lever (NeMo Agent Toolkit)</td><td><span class="prio pM">Med</span></td></tr>
+      <tr><td>Adjacent tooling / ecosystem</td><td>observability, gateways, memory, FinOps</td><td>indirect; gateways partner/compete with Dynamo router</td><td><span class="prio pM">Med</span></td></tr>
+      <tr><td>Agent product builders (AI-native)</td><td>Cursor, Devin, Harvey, Sierra</td><td>indirect → direct as they self-host for margin (NIM)</td><td><span class="prio pM">Med</span></td></tr>
+      <tr><td>Agent end-users (humans)</td><td>prosumers, knowledge workers, LoB</td><td>non-buyer — workload spec & SLO-setter</td><td><span class="prio pL">Low</span></td></tr>
+      <tr><td>Agent-as-machine-client</td><td>the request stream itself (not an actor)</td><td>non-buyer — <i>it is the serving spec</i></td><td><span class="prio pS">Spec</span></td></tr>
     </tbody>
   </table>
-  <p style="font-size:10px;color:var(--muted);margin:4px 0 0">+ folded-in: <b>sovereign/gov</b> (inverts the KV-reuse thesis → reuse-disable SKU), edge/robotics, voice/realtime, system integrators, telco/CSP, NVIDIA-internal SA/DevRel, and GPU/model marketplaces (resellers, no GPU custody).</p>
-  <p style="font-size:10px;color:var(--muted);margin:5px 0 0"><b style="color:var(--ink)">Stack today:</b> operators &amp; labs run <b>vLLM · SGLang · TensorRT-LLM · Triton Inference Server · Dynamo · LMCache/Mooncake</b>; enterprises &amp; sovereign → <b>NVIDIA NIM / AI Enterprise</b> (+ Bedrock/Azure/Vertex); builders &amp; frameworks → OpenAI/Anthropic APIs → self-host on vLLM/Fireworks/Together; edge/robotics → Jetson + TensorRT; aggregators route across all. <i>("Triton" = NVIDIA's model server <b>and</b> the GPU-kernel language under the engines.)</i></p>
+  <p style="font-size:9.8px;color:var(--muted);margin:5px 0 0"><span class="sc" style="color:var(--ink)">Folded in </span> sovereign/gov (inverts the KV-reuse thesis → reuse-disable SKU), edge/robotics, voice/realtime, system integrators, telco/CSP, NVIDIA-internal SA/DevRel, and GPU/model marketplaces (resellers, no GPU custody).</p>
+  <p style="font-size:9.8px;color:var(--muted);margin:5px 0 0"><span class="sc" style="color:var(--ink)">Stack today </span> operators &amp; labs run <b>vLLM · SGLang · TensorRT-LLM · Triton Inference Server · Dynamo · LMCache/Mooncake</b>; enterprises &amp; sovereign → <b>NVIDIA NIM / AI Enterprise</b> (+ Bedrock/Azure/Vertex); builders &amp; frameworks → OpenAI/Anthropic APIs → self-host on vLLM/Fireworks/Together; edge/robotics → Jetson + TensorRT; aggregators route across all. <i>(&ldquo;Triton&rdquo; = NVIDIA&rsquo;s model server <b>and</b> the GPU-kernel language under the engines.)</i></p>
 
-  <h2>Where to spend roadmap — the 3 HIGH bets</h2>
-  <div class="prio">
-    <div class="pcard"><h3>1 · Operators</h3><p class="why">The only direct check-writer for the serving stack.</p><p class="do"><b>Build first:</b> <code>agent_hints</code> + per-tenant KV / GPU-second attribution as a <i>measured</i> feature; prove the goodput delta on open infra.</p></div>
-    <div class="pcard"><h3>2 · Model labs</h3><p class="why">Largest spend + biggest substitution risk (ASICs).</p><p class="do"><b>Don't fight kernels — win the seam:</b> cross-tenant KV-locality control plane + day-one MoE serving. Cost-per-verified-task as the trojan horse.</p></div>
-    <div class="pcard"><h3>3 · Enterprise</h3><p class="why">Biggest net-new <i>durable</i> TAM; can't churn to an API.</p><p class="do"><b>Package:</b> a "governed agent factory in a box" — NIM + on-prem serving + cost/ROI attribution as one SKU.</p></div>
+  <h2>Where to spend roadmap — the three High bets</h2>
+  <div class="three">
+    <div class="pcard"><h3><span class="n">1</span>Operators</h3><p class="why">The only direct check-writer for the serving stack.</p><p class="do"><b>Build first:</b> agent_hints + per-tenant KV / GPU-second attribution as a <i>measured</i> feature; prove the goodput delta on open infra.</p></div>
+    <div class="pcard"><h3><span class="n">2</span>Model labs</h3><p class="why">Largest spend + biggest substitution risk (ASICs).</p><p class="do"><b>Don&rsquo;t fight kernels — win the seam:</b> cross-tenant KV-locality control plane + day-one MoE serving. Cost-per-verified-task as the trojan horse.</p></div>
+    <div class="pcard"><h3><span class="n">3</span>Enterprise</h3><p class="why">Biggest net-new <i>durable</i> TAM; can&rsquo;t churn to an API.</p><p class="do"><b>Package:</b> a &ldquo;governed agent factory in a box&rdquo; — NIM + on-prem serving + cost/ROI attribution as one SKU.</p></div>
   </div>
 
   <div class="two">
     <div>
       <h2>The MECE rule that keeps it clean</h2>
       <ul>
-        <li><b>Role precedence: lab &gt; operator &gt; builder.</b> A firm that trains the weights is scored as a lab even if it also runs GPUs and ships agents (OpenAI's fleet, Claude Code).</li>
-        <li><b>GPU custody = the operator test.</b> Own the fleet & accountable for $/token = operator; otherwise it's tooling (routers, gateways).</li>
-        <li><b>Builder vs. enterprise = AI-native & sold-to-third-parties.</b> Cursor/Harvey = builder; Klarna's support agent / Agentforce = enterprise.</li>
-        <li><b>Demote the workload.</b> "Agent-as-user" is the request-pattern spec, not a peer actor — else you double-count every request.</li>
+        <li><b>Role precedence: lab &gt; operator &gt; builder.</b> A firm that trains the weights is scored as a lab even if it also runs GPUs and ships agents (OpenAI&rsquo;s fleet, Claude Code).</li>
+        <li><b>GPU custody = the operator test.</b> Own the fleet &amp; accountable for $/token = operator; otherwise it&rsquo;s tooling (routers, gateways).</li>
+        <li><b>Builder vs. enterprise = AI-native &amp; sold to third parties.</b> Cursor/Harvey = builder; Klarna&rsquo;s support agent / Agentforce = enterprise.</li>
+        <li><b>Demote the workload.</b> &ldquo;Agent-as-user&rdquo; is the request-pattern spec, not a peer actor — else you double-count every request.</li>
       </ul>
     </div>
     <div>
       <h2>So what for the PM</h2>
       <ul>
         <li>One buyer signs the check (<b>operators</b>); one sets the spec (<b>the agent</b>); one is the durable land-grab (<b>enterprise</b>); one is the strategic seam (<b>labs</b>).</li>
-        <li>The wedge is the same everywhere: <b>per-tenant, per-task cost + KV-locality attribution</b> + the hint/continuity contract.</li>
-        <li>GRIT's measurement (cost-per-verified-task, locality tax) is the neutral evidence that makes that wedge legible to all of them.</li>
+        <li>The wedge is the same everywhere: <b>per-tenant, per-task cost + KV-locality attribution</b> + the hint / continuity contract.</li>
+        <li>GRIT&rsquo;s measurement (cost-per-verified-task, the locality tax) is the neutral evidence that makes that wedge legible to all of them.</li>
       </ul>
     </div>
   </div>
 
-  <p class="foot">Interactive version: <a href="./index.html">the clickable segment map</a> · full prose: <a href="https://github.com/ms-d-kim/grit/blob/main/docs/agent-user-map.md">github.com/ms-d-kim/grit · docs/agent-user-map.md</a> · generated via a 12-agent adversarial workflow.</p>
+  <p class="foot">Interactive version: <a href="./index.html">the clickable segment map</a> · full prose: <a href="https://github.com/ms-d-kim/grit/blob/main/docs/agent-user-map.md">github.com/ms-d-kim/grit · docs/agent-user-map.md</a> · generated via a twelve-agent adversarial workflow.</p>
 </div>
 </body>
 </html>

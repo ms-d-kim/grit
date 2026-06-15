@@ -3,78 +3,88 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Users of Agents — NVIDIA inference-PM map</title>
+<title>Users of Agents — an inference-PM map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0d1117; --panel:#161b22; --card:#1b222c; --line:rgba(255,255,255,.10); --line2:rgba(255,255,255,.18);
-    --text:#e9edf2; --muted:#9aa4b2; --faint:#6b7686;
-    --H:#76b900; --M:#d9a200; --L:#8a93a0; --spec:#8b7cf6;
-    --chip:#212a36;
+    --paper:#f7f5ef; --panel:#fcfbf7; --ink:#1d1b18; --muted:#6f6a61; --faint:#a59e90;
+    --line:#e4e0d4; --line2:#d0cabb; --accent:#7a1f24;
+    --disp:'Playfair Display',Georgia,serif; --serif:'Spectral',Georgia,'Times New Roman',serif;
   }
   *{box-sizing:border-box}
   html,body{margin:0}
-  body{background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-  a{color:#7aa2ff;text-decoration:none}
-  .wrap{max-width:1180px;margin:0 auto;padding:26px 20px 60px}
-  header h1{font-size:24px;font-weight:650;margin:0 0 4px;letter-spacing:-.01em}
-  header .sub{color:var(--muted);font-size:13.5px;margin:0 0 2px}
-  header .links{font-size:13px;margin-top:8px}
-  .insight{background:linear-gradient(180deg,rgba(118,185,0,.08),rgba(118,185,0,.02));border:1px solid rgba(118,185,0,.25);border-radius:12px;padding:12px 15px;margin:16px 0 18px;font-size:13.5px;color:#d7e6c2}
-  .insight b{color:#a6e05f}
-  .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:14px 0 6px}
-  .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-  .grp .lbl{color:var(--faint);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
-  .chip{font:inherit;font-size:12.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--line2);background:var(--chip);color:var(--text);cursor:pointer;transition:.15s}
-  .chip.on{background:#2b3a18;border-color:var(--H);color:#cbe89a}
-  .chip.buyer.on{background:#2a2230;border-color:var(--spec);color:#d9cdf6}
-  .legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:6px 0 2px}
-  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:13px;margin-top:16px}
-  .card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 15px 14px 18px;cursor:pointer;transition:transform .14s ease,border-color .14s,box-shadow .14s;overflow:hidden}
-  .card:hover{transform:translateY(-2px);border-color:var(--line2);box-shadow:0 10px 30px rgba(0,0,0,.35)}
-  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
-  .card .num{color:var(--faint);font-size:11px;font-weight:600}
-  .card h3{font-size:15px;margin:2px 0 7px;font-weight:600;letter-spacing:-.01em}
-  .badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-  .b{font-size:10.5px;padding:2px 7px;border-radius:6px;border:1px solid var(--line2);color:var(--muted)}
-  .b.prio{color:#0d1117;font-weight:700;border:none;background:var(--c)}
-  .card .who{color:var(--muted);font-size:12.5px;margin:0 0 8px}
-  .kv{font-size:12px;margin:3px 0;color:var(--text)}
-  .kv span{color:var(--faint)}
-  .gaptag{position:absolute;top:10px;right:10px;font-size:9.5px;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:1px 5px;text-transform:uppercase;letter-spacing:.05em}
-  h2.sec{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:30px 0 4px;border-top:1px solid var(--line);padding-top:18px}
-  /* drawer */
-  #scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+  body{background:var(--paper);color:var(--ink);font-family:var(--serif);font-weight:400;font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:#eaa9; background:#ece2cd}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(122,31,36,.28)}
+  a:hover{border-bottom-color:var(--accent)}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 30px 84px}
+  .sc{font-family:var(--serif);font-size:10.5px;font-weight:600;letter-spacing:.17em;text-transform:uppercase;color:var(--faint)}
+  header .kicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+  header h1{font-family:var(--disp);font-weight:600;font-size:40px;line-height:1.06;letter-spacing:-.012em;margin:0 0 12px}
+  header .sub{font-size:16.5px;color:var(--muted);font-style:italic;max-width:740px;margin:0}
+  header .sub b{font-style:normal;font-weight:600;color:var(--ink)}
+  header .links{font-size:14px;margin-top:14px;font-variant:small-caps;letter-spacing:.02em}
+  .insight{font-style:italic;color:#3c372d;font-size:15.5px;line-height:1.6;border-left:2px solid var(--accent);padding:3px 0 3px 20px;margin:26px 0;max-width:880px}
+  .insight b{font-style:normal;font-weight:600;color:var(--ink)}
+  .insight .dim{font-style:normal;color:var(--faint);font-size:12.5px}
+  .controls{display:flex;flex-wrap:wrap;gap:26px;align-items:baseline;margin:30px 0 2px}
+  .grp{display:flex;gap:15px;align-items:baseline;flex-wrap:wrap}
+  .grp .lbl{font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--faint)}
+  .chip{font-family:var(--serif);font-size:15px;background:none;border:none;color:var(--muted);cursor:pointer;padding:0 0 2px}
+  .chip:hover{color:var(--ink)}
+  .chip.on{color:var(--accent);font-weight:600;border-bottom:1px solid var(--accent)}
+  .legend{display:none}
+  h2.sec{font-family:var(--serif);font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:var(--faint);font-weight:600;margin:42px 0 0;padding-top:16px;border-top:1px solid var(--line2)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);margin-top:16px}
+  .card{position:relative;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:24px 26px;cursor:pointer;background:none;transition:background .2s}
+  .card:hover{background:var(--panel)}
+  .card .idx{font-family:var(--disp);font-size:13px;color:var(--faint);font-weight:500;letter-spacing:.04em}
+  .pmeta{margin:3px 0 8px}
+  .pmeta .dot{color:var(--line2);margin:0 8px}
+  .prio.H{color:var(--accent)} .prio.M{color:var(--ink)} .prio.L,.prio.spec{color:var(--faint)}
+  .card h3{font-family:var(--disp);font-weight:600;font-size:20px;line-height:1.14;margin:0 0 9px;letter-spacing:-.006em}
+  .card .who{color:var(--muted);font-style:italic;font-size:14.5px;line-height:1.5;margin:0 0 14px}
+  .kv{font-size:14px;margin:9px 0;color:var(--ink);line-height:1.5}
+  .kv .sc{display:block;margin-bottom:2px}
+  .kv.runs{color:var(--muted);font-size:13px}
+  .gaptag{position:absolute;top:24px;right:26px;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+  .foot{color:var(--faint);font-size:12px;font-style:italic;margin-top:38px;border-top:1px solid var(--line);padding-top:16px;line-height:1.65;max-width:900px}
+  .foot a{color:var(--muted);border-bottom-color:var(--line2)}
+  #scrim{position:fixed;inset:0;background:rgba(29,27,24,.32);opacity:0;pointer-events:none;transition:.22s;z-index:40}
   #scrim.on{opacity:1;pointer-events:auto}
-  #drawer{position:fixed;top:0;right:0;height:100%;width:min(560px,94vw);background:var(--panel);border-left:1px solid var(--line2);transform:translateX(102%);transition:transform .26s cubic-bezier(.22,1,.36,1);z-index:50;overflow-y:auto;padding:22px 24px 50px}
+  #drawer{position:fixed;top:0;right:0;height:100%;width:min(600px,94vw);background:var(--panel);border-left:1px solid var(--line2);transform:translateX(102%);transition:transform .32s cubic-bezier(.22,1,.36,1);z-index:50;overflow-y:auto;padding:44px 46px 70px}
   #drawer.on{transform:none}
-  #drawer .close{position:absolute;top:14px;right:16px;font-size:22px;color:var(--muted);background:none;border:none;cursor:pointer;line-height:1}
-  #drawer .num{color:var(--faint);font-size:12px;font-weight:600}
-  #drawer h2{font-size:20px;margin:2px 0 10px;letter-spacing:-.01em}
-  #drawer .field{margin:14px 0}
-  #drawer .field>.t{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);margin-bottom:5px}
-  #drawer ul{margin:4px 0;padding-left:18px}#drawer li{margin:4px 0;font-size:13.5px}
-  #drawer .cause{color:var(--muted);font-size:12px}
-  #drawer .pm{background:rgba(118,185,0,.08);border:1px solid rgba(118,185,0,.28);border-radius:10px;padding:11px 13px;font-size:13.5px}
-  #drawer .pm .t{color:#a6e05f}
-  .players span{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:2px 4px 2px 0;font-size:12px;color:var(--muted)}
-  .foot{color:var(--faint);font-size:11.5px;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
+  #drawer .close{position:absolute;top:22px;right:26px;font-size:26px;color:var(--muted);background:none;border:none;cursor:pointer;line-height:1;font-family:var(--serif)}
+  #drawer .idx{font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--faint)}
+  #drawer h2{font-family:var(--disp);font-weight:600;font-size:28px;line-height:1.1;margin:7px 0 9px;letter-spacing:-.01em}
+  #drawer .who{color:var(--muted);font-style:italic;margin:8px 0 4px}
+  #drawer .field{margin:20px 0}
+  #drawer .field>.t{font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+  #drawer ul{margin:4px 0;padding-left:18px}#drawer li{margin:6px 0;font-size:15px}
+  #drawer .cause{color:var(--muted);font-style:italic;font-size:13px}
+  #drawer .pm{border:1px solid var(--line2);border-radius:2px;padding:15px 17px;font-size:15px;background:var(--paper)}
+  #drawer .pm .t{color:var(--accent)}
+  .players span{display:inline-block;border:1px solid var(--line2);border-radius:2px;padding:2px 9px;margin:3px 5px 3px 0;font-size:12.5px;color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <h1>Users of Agents — an inference-PM map</h1>
-  <p class="sub">MECE segmentation by <b>primary economic role w.r.t. the agentic-inference (serving) layer</b>. Click any segment for the full profile. <span style="color:var(--faint)">Built for the NVIDIA inference-team lens (GRIT companion).</span></p>
-  <p class="links"><a href="./exec.html">→ 1-page PM exec summary</a></p>
+  <p class="kicker">GRIT · agentic inference</p>
+  <h1>Users of Agents</h1>
+  <p class="sub">A MECE field guide for the inference-team product manager — segmented by <b>primary economic role with respect to the agentic-inference (serving) layer</b>. Select a segment to read the full profile.</p>
+  <p class="links"><a href="./exec.html">The one-page exec summary →</a></p>
 </header>
 
 <div class="insight">
-<b>The non-obvious point:</b> the literal <i>user</i> of an inference service is increasingly the <b>agent itself</b> — a machine client emitting a long, correlated, stateful request stream — not the humans/orgs "using agents," who sit behind it and never touch the serving contract. NVIDIA inference sells <b>directly to ≤3</b> of these segments; the rest are demand-shapers, SLO-setters, or standards levers. <span style="color:var(--faint)">Quantitative magnitudes are directional unless cited; Dynamo's 85–97% is realized single-session under its own routing (motivation only).</span>
+<b>The non-obvious point.</b> The literal <i>user</i> of an inference service is increasingly the <b>agent itself</b> — a machine client emitting a long, correlated, stateful request stream — not the humans or organizations &ldquo;using agents,&rdquo; who sit behind it and never touch the serving contract. NVIDIA inference sells <b>directly to at most three</b> of these segments; the rest are demand-shapers, SLO-setters, or standards levers.
+<span class="dim">Quantitative magnitudes are directional unless cited; Dynamo&rsquo;s 85&ndash;97% is realized single-session under its own routing (motivation only).</span>
 </div>
 
 <div class="controls">
-  <div class="grp"><span class="lbl">PM priority</span>
+  <div class="grp"><span class="lbl">Priority</span>
     <button class="chip prio on" data-prio="all">All</button>
     <button class="chip prio" data-prio="H">High</button>
     <button class="chip prio" data-prio="M">Medium</button>
@@ -84,31 +94,26 @@
     <button class="chip buyer on" data-buyer="all">All</button>
     <button class="chip buyer" data-buyer="Direct">Direct</button>
     <button class="chip buyer" data-buyer="Indirect">Indirect</button>
-    <button class="chip buyer" data-buyer="Non-buyer">Non-buyer / spec</button>
+    <button class="chip buyer" data-buyer="Non-buyer">Non-buyer</button>
   </div>
 </div>
-<div class="legend">
-  <span><i style="background:var(--H)"></i>High priority</span>
-  <span><i style="background:var(--M)"></i>Medium</span>
-  <span><i style="background:var(--L)"></i>Low / non-buyer</span>
-  <span><i style="background:var(--spec)"></i>Workload spec</span>
-</div>
+<div class="legend"></div>
 
-<h2 class="sec" id="h-core">The 8 core segments</h2>
+<h2 class="sec">The eight core segments</h2>
 <div class="grid" id="grid-core"></div>
 
-<h2 class="sec" id="h-gap">Folded-in segments (completeness + MECE audit)</h2>
+<h2 class="sec">Folded in — completeness &amp; MECE audit</h2>
 <div class="grid" id="grid-gap"></div>
 
-<p class="foot">Generated via a 12-agent adversarial workflow (8 web-grounded analysts → MECE / completeness / realism critics → synthesis). Source &amp; full prose: <a href="https://github.com/ms-d-kim/grit/blob/main/docs/agent-user-map.md">github.com/ms-d-kim/grit · docs/agent-user-map.md</a>. Last updated 2026-06-15.<br>
-<b>Two "Tritons":</b> <i>Triton Inference Server</i> = NVIDIA's model server; <i>Triton</i> = the GPU-kernel language (originally OpenAI) that compiles attention/MoE kernels inside vLLM/SGLang/TensorRT-LLM. Both appear in "Runs today".</p>
+<p class="foot">Generated via a twelve-agent adversarial workflow (eight web-grounded analysts → MECE / completeness / realism critics → synthesis). Full prose: <a href="https://github.com/ms-d-kim/grit/blob/main/docs/agent-user-map.md">github.com/ms-d-kim/grit · docs/agent-user-map.md</a>. Last updated 2026-06-15.<br>
+Two &ldquo;Tritons&rdquo;: <i>Triton Inference Server</i> is NVIDIA&rsquo;s model server; <i>Triton</i> is the GPU-kernel language (originally OpenAI) that compiles the attention/MoE kernels inside vLLM / SGLang / TensorRT-LLM. Both appear under &ldquo;runs today.&rdquo;</p>
 </div>
 
 <div id="scrim"></div>
 <aside id="drawer" aria-hidden="true"><button class="close" aria-label="Close">&times;</button><div id="dbody"></div></aside>
 
 <script>
-const PRIO={H:{c:'var(--H)',t:'HIGH'},M:{c:'var(--M)',t:'MEDIUM'},L:{c:'var(--L)',t:'LOW'},spec:{c:'var(--spec)',t:'SPEC'}};
+const PRIO={H:{t:'High'},M:{t:'Medium'},L:{t:'Low'},spec:{t:'Spec'}};
 const D=[
  {id:1,tier:'core',prio:'H',buyer:'Direct',name:'Inference-serving operators',who:'Whoever owns the GPU fleet & is on the hook for $/token + SLO.',players:['Together','Fireworks','Baseten','Anyscale','Modal','CoreWeave','Lambda','Nebius','hyperscalers','large self-hosters'],
   needs:['Revenue-bearing utilization (goodput), not raw throughput','High KV-hit-rate on agent traffic','Per-tenant cost / GPU-second attribution'],
@@ -214,7 +219,7 @@ const D=[
   buying:'Carrier infra; capex-heavy.',
   pm:'Edge-distributed serving + residency controls; adjacent to sovereign.',
   traj:'Telco-AI / edge buildout.'},
- {id:14,tier:'gap',prio:'M',buyer:'Internal',name:'NVIDIA-internal: SA / SE / DevRel / DGX-Cloud ops',who:'The distribution arm + dogfooding ground.',players:['solutions architects','sales engineering','DevRel','DGX Cloud ops'],
+ {id:14,tier:'gap',prio:'M',buyer:'Internal',name:'NVIDIA-internal: SA / SE / DevRel / DGX-Cloud',who:'The distribution arm + dogfooding ground.',players:['solutions architects','sales engineering','DevRel','DGX Cloud ops'],
   needs:['Reference deployments & demos','Dogfooding feedback loop','Adoption tooling'],
   pains:[{p:'Serving features don’t convert to adoption without enablement',c:'no internal distribution/dogfooding loop'}],
   workload:'Internal benchmarking + customer pilots.',
@@ -231,7 +236,6 @@ const D=[
   pm:'Make NIM-on-Dynamo endpoints the cheapest/fastest to resell so aggregators route volume to NVIDIA-served open weights. (The MECE-audit gap: not an operator — no custody; not a lab — no weights.)',
   traj:'Token-marketplace layer growing.'},
 ];
-
 const STACK={
  1:'vLLM · SGLang · TensorRT-LLM · Triton Inference Server · NVIDIA Dynamo · LMCache · Mooncake · llm-d · Ray Serve — on H100/H200/GB200',
  2:'Mostly bespoke in-house serving; also vLLM / SGLang / TensorRT-LLM, Triton (kernel lang) + Megatron/JAX; some TPU / own ASIC',
@@ -249,20 +253,22 @@ const STACK={
  14:'NVIDIA Dynamo · NIM · Triton Inference Server · TensorRT-LLM · DGX Cloud · GenAI-Perf · NeMo',
  15:'Run no engine — route across partners’ vLLM / TGI / TensorRT-LLM endpoints; OpenRouter / HF Inference Providers / Bedrock',
 };
+const pad=n=>String(n).padStart(2,'0');
+const pcls=p=>p==='spec'?'spec':p;
 const grid={core:document.getElementById('grid-core'),gap:document.getElementById('grid-gap')};
 const state={prio:'all',buyer:'all'};
 function buyerClass(b){return b==='Direct'?'Direct':(b==='Non-buyer'||b==='Internal')?'Non-buyer':'Indirect';}
 function card(d){
-  const c=PRIO[d.prio].c;
-  const el=document.createElement('div');el.className='card';el.style.setProperty('--c',c);
+  const el=document.createElement('div');el.className='card';
   el.dataset.prio=d.prio;el.dataset.buyer=buyerClass(d.buyer);
   el.innerHTML=`${d.tier==='gap'?'<span class="gaptag">added</span>':''}
-    <div class="num">#${d.id}</div><h3>${d.name}</h3>
-    <div class="badges"><span class="b prio" style="--c:${c}">${PRIO[d.prio].t}</span><span class="b">${d.buyer} buyer</span></div>
+    <div class="idx">${pad(d.id)}</div>
+    <div class="pmeta"><span class="sc prio ${pcls(d.prio)}">${PRIO[d.prio].t} priority</span><span class="dot">·</span><span class="sc">${d.buyer} buyer</span></div>
+    <h3>${d.name}</h3>
     <p class="who">${d.who}</p>
-    <div class="kv"><span>Top need:</span> ${d.needs[0]}</div>
-    <div class="kv"><span>Top pain:</span> ${d.pains[0].p}</div>
-    <div class="kv" style="margin-top:7px;color:var(--faint)"><span>Runs today:</span> ${STACK[d.id]}</div>`;
+    <div class="kv"><span class="sc">Top need</span>${d.needs[0]}</div>
+    <div class="kv"><span class="sc">Top pain</span>${d.pains[0].p}</div>
+    <div class="kv runs"><span class="sc">Runs today</span>${STACK[d.id]}</div>`;
   el.onclick=()=>openD(d);
   return el;
 }
@@ -275,21 +281,20 @@ function render(){
   });
 }
 function openD(d){
-  const c=PRIO[d.prio].c;
   document.getElementById('dbody').innerHTML=`
-    <div class="num">#${d.id} · ${d.tier==='gap'?'folded-in segment':'core segment'}</div>
+    <div class="idx">${pad(d.id)} — ${d.tier==='gap'?'folded-in segment':'core segment'}</div>
     <h2>${d.name}</h2>
-    <div class="badges"><span class="b prio" style="--c:${c}">${PRIO[d.prio].t} priority</span><span class="b">${d.buyer} buyer</span></div>
-    <p class="who" style="color:var(--muted)">${d.who}</p>
+    <div class="pmeta"><span class="sc prio ${pcls(d.prio)}">${PRIO[d.prio].t} priority</span><span class="dot">·</span><span class="sc">${d.buyer} buyer</span></div>
+    <p class="who">${d.who}</p>
     <div class="field"><div class="t">Representative players</div><div class="players">${d.players.map(p=>`<span>${p}</span>`).join('')}</div></div>
     <div class="field"><div class="t">Needs (ranked)</div><ul>${d.needs.map(n=>`<li>${n}</li>`).join('')}</ul></div>
-    <div class="field"><div class="t">Pain points (root cause)</div><ul>${d.pains.map(x=>`<li>${x.p}<br><span class="cause">↳ ${x.c}</span></li>`).join('')}</ul></div>
+    <div class="field"><div class="t">Pain points</div><ul>${d.pains.map(x=>`<li>${x.p}<br><span class="cause">↳ ${x.c}</span></li>`).join('')}</ul></div>
     <div class="field"><div class="t">Stack they run today</div><div>${STACK[d.id]}</div></div>
     <div class="field"><div class="t">Workload signature</div><div>${d.workload}</div></div>
     <div class="field"><div class="t">Inference touchpoint — what they buy</div><div>${d.touch}</div></div>
     <div class="field"><div class="t">Buying behavior</div><div>${d.buying}</div></div>
     <div class="field"><div class="t">Trajectory</div><div>${d.traj}</div></div>
-    <div class="pm"><div class="t" style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">NVIDIA inference-PM implication</div>${d.pm}</div>`;
+    <div class="pm"><div class="sc t" style="margin-bottom:7px">NVIDIA inference-PM implication</div>${d.pm}</div>`;
   document.getElementById('drawer').classList.add('on');
   document.getElementById('drawer').setAttribute('aria-hidden','false');
   document.getElementById('scrim').classList.add('on');

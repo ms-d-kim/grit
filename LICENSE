@@ -1,0 +1,23 @@
+Copyright 2026 The GRIT authors.
+
+Code in this repository (the harness, schema, and analysis under 05-experiments/) is
+licensed under the Apache License, Version 2.0 (the "License"); you may not use these
+files except in compliance with the License. You may obtain a copy of the License at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the
+License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+either express or implied. See the License for the specific language governing permissions
+and limitations under the License.
+
+SPDX-License-Identifier: Apache-2.0
+
+---
+NOTES (pre-publication):
+- Before public release, replace this notice with the FULL Apache-2.0 license text
+  (https://www.apache.org/licenses/LICENSE-2.0.txt) so GitHub detects it.
+- DATA licensing is intentionally NOT asserted here. The planned C3 trace embeds
+  benchmark/model-derived content whose redistribution terms are unresolved (pilot
+  README issue #17); a separate LICENSE-data (target: CC-BY-4.0) will be added only after
+  that legality review. Until then, no trace is released.

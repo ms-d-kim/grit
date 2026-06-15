@@ -1,0 +1,67 @@
+{
+  "_comment": "Example TaskRecord fixture (one agent task) — the C3 trace schema. Matches harness/trace_schema.py. Illustrative values, NOT measured data. locality_gap here = available(80000/100000=0.80) - realized(41000/100000=0.41) = 0.39, clamped to [0,1].",
+  "task_id": "swebench_verified__django__django-12345",
+  "benchmark": "swebench_verified",
+  "methodology": "react",
+  "serving_config_id": "react|swebench_verified|mixed_0.50|lru|h16|r0",
+  "success": true,
+  "n_iterations": 14,
+  "e2e_latency_ms": 612400.0,
+  "gpu_seconds": 188.3,
+  "total_cost_usd": 0.71,
+  "reusable_tokens_infinite_cache": 80000,
+  "realized_reused_tokens": 41000,
+  "eligible_input_tokens": 100000,
+  "model_calls": [
+    {
+      "request_id": "req_0001",
+      "task_id": "swebench_verified__django__django-12345",
+      "iteration_index": 0,
+      "tenancy": "agent",
+      "model": "Qwen2.5-Coder-32B-Instruct",
+      "serving_config_id": "react|swebench_verified|mixed_0.50|lru|h16|r0",
+      "ttft_ms": 410.0,
+      "tpot_ms": 18.2,
+      "total_latency_ms": 5230.0,
+      "input_tokens": 6200,
+      "output_tokens": 240,
+      "prefix_cache_hit_tokens": 0,
+      "prefix_cache_hit_rate": 0.0,
+      "kv_blocks_allocated": 388,
+      "kv_blocks_evicted": 0,
+      "gpu_busy_ms": 4990.0,
+      "queue_wait_ms": 12.0,
+      "phase": "read_explore"
+    },
+    {
+      "request_id": "req_0009",
+      "task_id": "swebench_verified__django__django-12345",
+      "iteration_index": 8,
+      "tenancy": "agent",
+      "model": "Qwen2.5-Coder-32B-Instruct",
+      "serving_config_id": "react|swebench_verified|mixed_0.50|lru|h16|r0",
+      "ttft_ms": 980.0,
+      "tpot_ms": 19.1,
+      "total_latency_ms": 7110.0,
+      "input_tokens": 41800,
+      "output_tokens": 300,
+      "prefix_cache_hit_tokens": 9000,
+      "prefix_cache_hit_rate": 0.215,
+      "kv_blocks_allocated": 2613,
+      "kv_blocks_evicted": 740,
+      "gpu_busy_ms": 6020.0,
+      "queue_wait_ms": 410.0,
+      "phase": "execute_write"
+    }
+  ],
+  "tool_calls": [
+    {
+      "request_id": "req_0001",
+      "task_id": "swebench_verified__django__django-12345",
+      "iteration_index": 0,
+      "tool_name": "bash",
+      "dispatched_at_ms": 5230.0,
+      "returned_at_ms": 9840.0
+    }
+  ]
+}

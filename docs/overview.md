@@ -53,7 +53,7 @@ of cost-per-task attributable to eviction), anchored on Cost-of-Pass and framed 
 goodput.
 
 ## Limitations (honest)
-- **Pre-data:** the harness is a scaffold; ~19 design issues gate spending GPU budget (metric definition,
+- **Pre-data:** the harness is a scaffold; ~22 design issues gate spending GPU budget (metric definition,
   per-request cache attribution feasibility, the SWE-bench resolve-rate floor, etc.).
 - **Regime-dependent:** the seam bites hardest under bounded cache + interleaving + long horizon; if good
   routing or cheap inference (TTL) recovers most reuse, the measured value of awareness is small (still a

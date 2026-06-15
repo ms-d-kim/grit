@@ -34,7 +34,8 @@ Whether it does is genuinely contested in the 2026 literature, and the disagreem
   to multiple workloads sharing the engine.
 
 A high-reuse pole and a collapse pole that don't meet — because **no one has isolated the multi-tenant
-driver on open infrastructure.** The mechanistic root cause is the **orchestrator↔engine seam**: the
+driver on open infrastructure** (others now *co-locate* chat+agent to **schedule** it — e.g. Tempo,
+2504.20068 — but none **measure** the locality tax that interleaving causes). The mechanistic root cause is the **orchestrator↔engine seam**: the
 engine is *workflow-agnostic* (Cortex's term) — it sees a flat stream of independent requests, blind to
 the agent loop, the imminent tool pause, and cross-request prefix sharing. The 2026 frontier is a
 scramble to break that seam, split between **declaring** the contract via hints/plans/DAGs (Dynamo
@@ -59,7 +60,7 @@ shipped as a public trace — is still ours.
 
 | | Contribution | Status |
 |---|---|---|
-| **C1** — *lead* | The realized-vs-available **cache-locality gap** quantified on open infra, expressed as the **"Cost of Grit"** (cost per *verified task* — [`docs/metric-design.md`](docs/metric-design.md)) | pilot pending |
+| **C1** — *lead* | The realized-vs-available **cache-locality gap** quantified on open infra, expressed as the **"Cost of Grit"** (cost per *verified task*); the *identifying primitive* is the **same-stream oracle-vs-bounded Δ GPU-seconds / verified task** ([`docs/metric-design.md`](docs/metric-design.md)) — gates C1 | pilot pending |
 | **C3** — *artifact* | A released **mixed chat×agent, cost-labeled, OpenTelemetry-format serving trace + collection harness** — no public *mixed, cost-labeled, open-infra* agentic trace exists (closest prior: vLLM×Mooncake's agent-only, un-cost-labeled corpus) | bundled with C1 |
 
 **C1, technically.** Hold the model fixed (Qwen2.5-Coder-32B — the model-vs-system confound control) and

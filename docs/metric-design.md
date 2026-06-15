@@ -65,8 +65,10 @@ x-axis = horizon; three curves:
 3. **cost / verified task** — rising **super-linearly**.
 
 The gap between curve 1 and curve 3 *is* the Cost of Grit; the portion attributable to eviction *is* the
-locality tax. (See also: cost-per-verified-task **at matched success rate** across cache policies, to
-strip out model-driven capability differences.)
+locality tax. (Report success rate as a *separate* axis over a **frozen, pre-registered task population
+(intention-to-treat)** — do **not** "match success rate" by sub-sampling/re-weighting, which conditions on
+the outcome, the very thing the no-pre-selection rule below forbids. *Corrected 2026-06-14: earlier "at
+matched success rate" was self-contradictory.*)
 
 ## Explicitly rejected / relegated
 
@@ -80,8 +82,9 @@ strip out model-driven capability differences.)
 
 ## Confounds this commits us to (methods section)
 
-1. **Model vs. system** — hold the model fixed; report cost-per-verified-task *as a frontier or at
-   matched success rate* so serving never gets credit for capability.
+1. **Model vs. system** — hold the model fixed; report cost-per-verified-task *as a frontier over a frozen
+   task population* (NOT "at matched success rate" — matching conditions on the outcome) so serving never
+   gets credit for capability; success rate is a separately-reported axis.
 2. **Failed-attempt accounting** (#5) + the attempt/retry trace record (#8).
 3. **Verification definition** pinned per benchmark + the partial-credit rule, pre-registered.
 4. **Energy telemetry** caveats (rented-GPU power draw; CPU tool energy); GPU-seconds stays the anchor.

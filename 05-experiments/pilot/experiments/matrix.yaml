@@ -22,7 +22,21 @@ methodologies:
 cache_policy:           # the independent variable that should move realized hit rate
   - none                # prefix caching off (control)
   - lru                 # default eviction
-  - retain_during_tool  # TTL-style retention across tool gaps (cf. Continuum/CacheTTL)
+  - retain_during_tool  # CAVEAT (judge pass 2026-06-14, issue #21): NOT a stock vLLM/SGLang knob —
+                        # implementing it = building the Continuum/CacheTTL/Dynamo-TTL *mechanism*, which
+                        # contradicts "measurement, not mechanism". Use stock-only, OR bind to a NAMED
+                        # existing impl (Dynamo TTL / LMCache) and run that build. Decide at the sync.
+  # - oracle_resident   # THE IDENTIFYING ARM for the locality tax (metric-design "same-stream
+                        # counterfactual", issue #20): replay the SAME recorded stream with every
+                        # reuse-eligible prefix block RESIDENT. tax = Δ GPU-seconds (bounded − resident)
+                        # ÷ verified task. GATES C1 — needs the engine feasibility spike (observability
+                        # §1); may not be realizable on stock engines. Without it, C1 is not identified.
+
+bounded_kv_blocks:      # issue #4 — the KV-PRESSURE axis (the seam only bites under a bounded cache).
+  # -1 / unset = eviction never fires → the gap mechanically vanishes. Set ≥1 positive budget; sweep ≥2
+  # regimes. Values are GPU/model-specific — fill from the instrumentation spike before any real run.
+  - TBD_low             # tighter budget (more eviction)
+  - TBD_high            # looser budget
 
 tenancy:                # the multi-tenant interleaving axis (core of H1)
   - isolated            # agent traffic only
@@ -36,7 +50,7 @@ repeats: 3                        # per cell, for variance
 scenarios_per_cell: 50            # ~50 task instances
 
 # ---------------------------------------------------------------------------
-# PILOT CELL (run this first — ~1 week, de-risks the whole design)
+# PILOT CELL (run this first — ~1-2 weeks, de-risks the whole design)
 # ---------------------------------------------------------------------------
 pilot:
   engine: vllm
@@ -61,6 +75,6 @@ pilot:
 
 compute:
   target: "1xH100 (80GB) minimum; 2xH100/H200 preferred"
-  rent: "Runpod / Lambda / Vast (~$2-4/hr); two-arm pilot ~$500-600 (was <$300 for tau2-only)"
+  rent: "Runpod / Lambda / Vast — ~$500-600 ≈ ~$3/hr × ~180 GPU-hours (NOT $/hr × wall-clock; assumes batched/non-idle time; was <$300 for tau2-only)"
   full_study_estimate_usd: "500-1500 (open-infra GPU rental only; no proprietary APIs, per scope)"
   funding: "TBD — Stanford credits / NVIDIA credits / personal (decide at sync)"

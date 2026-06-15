@@ -99,8 +99,9 @@ class TaskRecord:
     # --- available reuse, computed OFFLINE [OWNER: Minseok] ---
     # Replay the trace against an *infinite* cache to get the upper bound, then compare
     # to the realized hit rate from ModelCallSpan. The delta is the 'locality tax'.
-    reusable_tokens_infinite_cache: Optional[int] = None
-    realized_reused_tokens: Optional[int] = None
+    reusable_tokens_infinite_cache: Optional[int] = None   # available reuse (offline replay), own-lineage
+    realized_reused_tokens: Optional[int] = None            # realized reuse (engine counter)
+    eligible_input_tokens: Optional[int] = None            # the COMMON denominator for both rates (issue #1)
 
     model_calls: list[ModelCallSpan] = field(default_factory=list)
     tool_calls: list[ToolCallSpan] = field(default_factory=list)
@@ -108,24 +109,30 @@ class TaskRecord:
     # ---- derived metrics (the paper's headline quantities) ----
     @property
     def cost_per_verified_iteration(self) -> Optional[float]:
-        """The 'Cost of Grit' unit. None if the task failed (no verified outcome)."""
+        """DIAGNOSTIC decomposition term only — NOT the headline metric. The headline is
+        cost-per-verified-*task* (Σ cost over ALL attempts ÷ binary successes), which needs the
+        attempt/retry record (pilot issue #8 — not yet in this schema). This per-iteration form
+        nulls on failure → survivor bias (issue #5); do NOT aggregate it as the result."""
         if not self.success or self.n_iterations == 0:
             return None
         return self.total_cost_usd / self.n_iterations
 
     @property
     def locality_gap(self) -> Optional[float]:
-        """available - realized reuse, in [0,1]. The core locality-gap quantity.
-        NOTE: definition under revision — see open issue 1 in the pilot README
-        (must use a common eligible-token denominator and clamp to [0,1])."""
-        if self.reusable_tokens_infinite_cache and self.realized_reused_tokens is not None:
-            total = self.reusable_tokens_infinite_cache
-            if total == 0:
-                return None
-            available = 1.0
-            realized = self.realized_reused_tokens / total
-            return available - realized
-        return None
+        """Lineage-scoped locality gap = available_rate − realized_rate, BOTH over the same
+        eligible-input-token denominator, clamped to [0,1] (resolves issue #1's out-of-range bug).
+        The global-stream scope is a SEPARATE estimand: engine-realized hits can include other
+        tenants' blocks, so realized can exceed own-lineage available — see metric-design.md,
+        'two scope-matched estimands'; never mix the two. None until denominator + both counts set."""
+        elig = self.eligible_input_tokens
+        if (elig is None or elig <= 0
+                or self.reusable_tokens_infinite_cache is None
+                or self.realized_reused_tokens is None):
+            return None
+        available = self.reusable_tokens_infinite_cache / elig
+        realized = self.realized_reused_tokens / elig
+        # clamp: a cross-tenant overshoot (realized > available) is a global-stream quantity, not a negative gap
+        return max(0.0, min(1.0, available - realized))
 
     @property
     def total_tool_gap_ms(self) -> float:
@@ -142,6 +149,16 @@ if __name__ == "__main__":
         serving_config_id="react|tau2|mixed0.5|ttl", success=True, n_iterations=12,
         e2e_latency_ms=48230.0, gpu_seconds=31.4, total_cost_usd=0.42,
         reusable_tokens_infinite_cache=100000, realized_reused_tokens=41000,
+        eligible_input_tokens=120000,
     )
-    print("cost/verified-iter:", t.cost_per_verified_iteration)
+    print("cost/verified-iter (diagnostic):", t.cost_per_verified_iteration)
     print("locality_gap:", t.locality_gap)
+    # edge case: cross-tenant overshoot (realized > available) must CLAMP to 0, not go negative
+    t2 = TaskRecord(
+        task_id="edge", benchmark="b", methodology="react", serving_config_id="c",
+        success=True, n_iterations=1, e2e_latency_ms=1.0, gpu_seconds=1.0, total_cost_usd=0.1,
+        reusable_tokens_infinite_cache=100, realized_reused_tokens=140, eligible_input_tokens=200,
+    )
+    print("locality_gap (overshoot clamps to 0):", t2.locality_gap)
+    assert 0.0 <= t.locality_gap <= 1.0 and t2.locality_gap == 0.0, "locality_gap out of [0,1]"
+    print("OK: locality_gap in [0,1] on both cases")

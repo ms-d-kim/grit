@@ -16,9 +16,17 @@ Roles:
 """
 
 from __future__ import annotations
-import yaml
+try:
+    import yaml
+except ModuleNotFoundError:
+    raise SystemExit("run_pilot needs pyyaml — run: pip install -r requirements.txt")
 from pathlib import Path
-from harness.trace_schema import TaskRecord, ModelCallSpan, ToolCallSpan, Tenancy  # noqa
+try:  # works as `python -m harness.run_pilot` (from pilot root)
+    from harness.trace_schema import TaskRecord, ModelCallSpan, ToolCallSpan, Tenancy  # noqa
+except ModuleNotFoundError:  # and as `python harness/run_pilot.py`
+    import sys, pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from trace_schema import TaskRecord, ModelCallSpan, ToolCallSpan, Tenancy  # noqa
 
 
 # ---------------------------------------------------------------------------

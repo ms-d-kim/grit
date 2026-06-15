@@ -44,7 +44,7 @@ treat as suspect until checked; ✗ = ID in prior notes appears wrong.*
 | ScaleSim | 2601.21473 | multi-agent simulation, invocation-distance memory mgmt | ✓ |
 | Aragog | 2511.20975 | JIT model routing for agentic workflows | ✓ |
 | AWO (meta-tools) | 2601.22037 | compile recurring behaviors into deterministic meta-tools | ✓ |
-| CONCUR | 2601.22705 | *ICML'26 claimed — venue acceptance unconfirmed on arXiv* — congestion-based concurrency control for agentic batch inference | ✓ |
+| CONCUR | 2601.22705 | congestion-based concurrency control for agentic batch inference *(2026-06-14: venue claim STRUCK — "ICML'26" had no locatable source in any primary record)* | ✓ |
 | HexAGenT | 2605.16637 | workflow- & heterogeneity-aware scheduling; request as an online-revealed DAG (verified 2026-06-14) | ✓ |
 | Cortex | 2510.14126 | workflow-aware resource pooling/scheduling from a compiled call graph + per-request SLO slack; notes platforms are "workflow-agnostic" (verified 2026-06-14) | ✓ |
 
@@ -92,7 +92,7 @@ most of the reuse, the measured value of awareness is small — which is itself 
 | More with Less (turn-control for coding agents) | 2510.16786 | cost-per-patch (~$5.85 avg, ~$7.80 correct), 41–58 median turns — capability side, not serving | ✓ |
 | Latency-Reliability-Cost tradeoffs in agentic workflows | 2605.23929 | analytical tradeoff model | ✓ |
 | SWE-EVO (long-horizon SE benchmark) | 2512.18470 | multi-PR tasks, "Fix Rate" partial-progress metric | ✓ |
-| **Cost-of-Pass** (economic eval framework) | 2504.13359 | Stanford (Erol, El, Suzgun, Yüksekgönül, Zou); OpenReview `vC9S20zsgN` (ICLR'26 submission — *acceptance unconfirmed*) — expected $ for a *correct* solution (Farrell efficiency); the **academic anchor for our cost-per-verified-task**; we move it from the API black box into open-infra internals | ✓ |
+| **Cost-of-Pass** (economic eval framework) | 2504.13359 | Stanford (Erol, El, Suzgun, Yüksekgönül, Zou); **ICLR 2026 (accepted** — OpenReview `vC9S20zsgN`, "Published as a conference paper at ICLR 2026", verified 2026-06-14) — expected $ for a *correct* solution (Farrell efficiency); the **academic anchor for our cost-per-verified-task**; we move it from the API black box into open-infra internals | ✓ |
 | Efficient Agents | 2508.02694 | efficiency–effectiveness tradeoff; 28.4% cost-of-pass improvement on GAIA (capability side) | ✓ |
 | EET (early termination for SE agents) | 2601.05777 | experience-driven early stopping; −32% avg cost, ≤0.2% resolution loss — the "when to stop gritting" lever | ✓ |
 | TokenPowerBench (energy) | AAAI | benchmarks **J/token** power draw of LLM inference — the energy numerator for the cost-of-grit | ✓ |
@@ -150,7 +150,7 @@ narrowed claim (mixed chat+agent **+ cost-labeled** open-infra trace) survives, 
 prior artifact — cite + differentiate. Dynamo v1.2–1.3 is adding an "Agent Trajectory Interchange Format"
 + agentic trace-replay in-tree — watch. **⚠ The exact vLLM×Mooncake figures (610 / ~33 turns / 94% /
 1.7%→92.2%) lack a recorded primary URL here — locate the vLLM blog post and pin it before any of these
-numbers enter a draft (Codex review flagged them unverifiable from the repo).**
+numbers enter a draft. (2026-06-14: a judge located them at the vLLM "Mooncake-store" blog, ~2026-05-06, with matching figures — confirm + pin that URL before camera-ready.)**
 
 - **GAIATrace** — 2606.01725 (✓ verified 2026-06-14, web) — *"Characterization of Multi-Model Agentic AI
   Systems on General Tasks via Trace-Driven Simulation"*: a **token-level** trace of two agentic systems
@@ -172,7 +172,8 @@ the long-horizon arm where the gap is visible; see `../05-experiments/pilot/expe
 
 *New entrants found via live search this pass; venues web-checked where stated.*
 - **GORGO** — 2602.11688 ✓ — *cross-region* LLM load balancing that maximizes KV-cache reuse **while** minimizing network latency; network-aware routing, ~2.5× faster median TTFT vs prior KV-hit-maximizing routers. Relevant to the *placement* axis (where reused KV lives across regions) and to the TTFT framing.
-- **Pie** — SOSP'25 (ACM DL `10.1145/3731569.3764814`) ✓ — a **programmable serving system for emerging LLM applications** (agents/structured programs as first-class); a top-venue signal that "serving for agentic programs" is now its own systems topic.
+- **Pie** — 2510.24051 / SOSP'25 (ACM DL `10.1145/3731569.3764814`) ✓ — a **programmable serving system** exposing *inferlets* with explicit KV allocation/reuse + agentic-workflow evaluation; it directly attacks the orchestrator↔engine boundary → treat as **close architectural prior art** (compare GRIT's intervention/eval against it), not merely a "signal."
+- **Tempo** — 2504.20068 ✓ (web-verified 2026-06-14) — *"Application-aware LLM Serving with Mixed SLO Requirements"* (Zhang, Wu, Mu, Liu, Lee, Lai — UIUC/Cisco): an SLO-aware scheduler that **co-schedules chat + reasoning + agentic** traffic on one engine (≤8.3× service gain, ≤10.3× SLO goodput). A *mechanism*, so it does NOT pre-empt the measurement — but it **co-locates the chat×agent mix GRIT studies**, so soften any "nobody co-locates these workloads" rhetoric to **"nobody has measured the *locality tax* under that mix on open infra."** Also names the chat-vs-agent axis (cf. WRP 2603.21354).
 - **ProphetKV** — 2602.02579 ✓ — user-query-driven selective recomputation for KV reuse in **RAG** (adjacent: RAG, not agent loops).
 - **Prefill-as-a-Service** — 2604.15039 ✓ — argues next-gen KVCache could go **cross-datacenter** (placement/disaggregation frontier).
 - **KVFlow venue confirmed:** 2507.07400 is a **NeurIPS 2025** poster (neurips.cc/virtual/2025/poster) — promote the venue where cited.
@@ -193,7 +194,7 @@ verified in [`../docs/inference-systems-reading-map.md`](../docs/inference-syste
 
 These appear in `04-ideas/candidates.md` and `02-literature/reading-queue.md` but were NOT
 confirmed this session. Some may be internal codenames, renamed, or hallucinated:
-- **SideQuest (2602.22603)** — not verified.
+- **SideQuest (2602.22603)** — ✓ RESOLVED 2026-06-14 (web): REAL — *"SideQuest: Model-Driven KV Cache Management for Long-Horizon Agentic Reasoning"* (Kariyappa & Suh); ~56–65% peak-token-utilization reduction. A KV-management *mechanism* for agents (does not pre-empt C1; reinforces the crowded mechanism space).
 - **Agent Memory (2606.06448)** — ✓ RESOLVED 2026-06-14 (judge panel caught a false ✗): **REAL** —
   *"Agent Memory: Characterization and System Implications of Stateful Long-Horizon Workloads"* (Omri,
   Gan, …, **Thierry Tambe**; Stanford et al., Jun 2026). First systems characterization of agent memory

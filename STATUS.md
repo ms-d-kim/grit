@@ -6,7 +6,9 @@ the old planning doc, this wins — that doc is a fossil record of earlier drift
 ## One-paragraph state
 Measurement-and-characterization paper for **MLSys 2027 Industry Track (~Oct 2026)**, public
 benchmarks (SWE-bench Verified, τ²-bench) + open infra (vLLM/SGLang) only. The lead contribution is
-**C1 — the cost-per-verified-iteration / "Cost of Grit" curve**, with the realized-vs-available
+**C1 — the "Cost of Grit" curve** (proposed headline denominator: cost-per-verified-*task*, see
+`docs/metric-design.md`; the cost-per-*iteration* form used below + in the harness is the diagnostic,
+pending co-author ratification), with the realized-vs-available
 **cache-locality gap** folded inside it, plus **C3 — a released mixed chat×agent, cost-labeled,
 OTel-format trace + harness** as the cross-cutting artifact. The citation ledger / SOTA pass is done
 and re-verified live (`02-literature/sota-verified-2026.md`); prose synthesis (survey, lit-review,
@@ -106,6 +108,6 @@ are adjacent to published work. Defensibility = the *bundle* (rigor + breadth + 
 - `07-venues/venues.md` — venue tracking.
 
 ## How to continue in Code/Cowork
-1. Unzip; `git init`; commit to a **private** remote (see README "On GitHub").
+1. Repo is live on GitHub (`ms-d-kim/grit`, public) — clone/pull as normal.
 2. `cd 05-experiments/pilot && python3 harness/trace_schema.py` to sanity-check the schema.
 3. Pilot cell + ownership split are in `05-experiments/pilot/README.md` — that's the Vinita-sync artifact.
